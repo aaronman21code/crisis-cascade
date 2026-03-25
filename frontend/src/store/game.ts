@@ -98,6 +98,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     socket.on('phase:change', ({ phase }: { phase: Phase }) => {
+      // Don't auto-advance away from analysis — user must click Continue
+      if (get().phase === 'analysis') return;
       set({ phase });
     });
 

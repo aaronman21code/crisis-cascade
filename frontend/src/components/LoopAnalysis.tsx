@@ -25,7 +25,7 @@ const WINNER_LABELS: Record<string, { title: string; desc: string; color: string
 
 export function LoopAnalysis() {
   const { gameState, prevState, loopAnalysis, subGames, playerFaction, resetGame, continueObserving, skipAnalysis, observedWinner } = useGameStore();
-  const [showFull, setShowFull] = useState(false);
+  const showFull = true;
 
   const prevLambda  = prevState?.globalLambda ?? 1.0;
   const newLambda   = gameState.globalLambda;
@@ -122,23 +122,7 @@ export function LoopAnalysis() {
           </div>
         )}
 
-        {/* "Show full analysis" toggle */}
-        <button
-          onClick={() => setShowFull(v => !v)}
-          className="text-xs text-gray-500 hover:text-gray-300 transition w-full text-center"
-        >
-          {showFull ? 'Hide analysis' : 'Show full analysis'}
-        </button>
-
-        <AnimatePresence>
-          {showFull && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.35 }}
-              style={{ overflow: 'hidden' }}
-            >
+        <div>
               <div className="space-y-6">
 
                 {/* λ stat boxes */}
@@ -248,9 +232,7 @@ export function LoopAnalysis() {
                 </div>
 
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
 
         {/* Bottom actions */}
         <div className="pt-2 border-t border-[#1a1a1a] flex gap-3 justify-end">

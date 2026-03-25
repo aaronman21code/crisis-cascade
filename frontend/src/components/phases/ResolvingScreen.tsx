@@ -31,7 +31,7 @@ export function ResolvingScreen() {
           clearInterval(timerRef.current!);
           setTimeout(() => {
             setMetricsVisible(true);
-            setTimeout(() => advanceToAnalysis(), 2500);
+            setTimeout(() => advanceToAnalysis(), 8000);
           }, METRICS_DELAY);
         }
         return next;
