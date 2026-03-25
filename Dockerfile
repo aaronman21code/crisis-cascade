@@ -20,4 +20,4 @@ RUN cd backend && npm run build
 
 EXPOSE 3001
 
-CMD ["node", "backend/dist/server.js"]
+CMD ["node", "backend/dist/backend/src/server.js"]
