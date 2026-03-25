@@ -1,5 +1,4 @@
 // frontend/src/components/LoopAnalysis.tsx
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/game';
 import { GAME_THEORY_DATA, FactionId } from '@engine/gameTheoryData';
@@ -25,7 +24,7 @@ const WINNER_LABELS: Record<string, { title: string; desc: string; color: string
 
 export function LoopAnalysis() {
   const { gameState, prevState, loopAnalysis, subGames, playerFaction, resetGame, continueObserving, skipAnalysis, observedWinner } = useGameStore();
-  const showFull = true;
+  const isDirector = playerFaction === 'DIRECTOR';
 
   const prevLambda  = prevState?.globalLambda ?? 1.0;
   const newLambda   = gameState.globalLambda;
@@ -75,25 +74,27 @@ export function LoopAnalysis() {
           )}
         </AnimatePresence>
 
-        {/* Hero quote + λ delta */}
+        {/* Hero quote */}
         <motion.div
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
         >
           <p className="text-xl text-white leading-loose">
-            {loopAnalysis ?? `λ rose from ${prevLambda.toFixed(2)} to ${newLambda.toFixed(2)} — each Overreach amplifies fear for every player.`}
+            {loopAnalysis ?? `Global tension rose — every uncoordinated move raises pressure for all players.`}
           </p>
-          <p className="text-sm font-mono mt-3" style={{ color: '#4b5563' }}>
-            λ{' '}
-            <span style={{ color: '#9ca3af' }}>{prevLambda.toFixed(2)}</span>
-            {' → '}
-            <span style={{ color: lambdaColor }}>{newLambda.toFixed(2)}</span>
-            {'  Δ '}
-            <span style={{ color: deltaColor }}>
-              {lambdaDelta >= 0 ? '+' : ''}{lambdaDelta.toFixed(3)}
-            </span>
-          </p>
+          {isDirector && (
+            <p className="text-sm font-mono mt-3" style={{ color: '#4b5563' }}>
+              λ{' '}
+              <span style={{ color: '#9ca3af' }}>{prevLambda.toFixed(2)}</span>
+              {' → '}
+              <span style={{ color: lambdaColor }}>{newLambda.toFixed(2)}</span>
+              {'  Δ '}
+              <span style={{ color: deltaColor }}>
+                {lambdaDelta >= 0 ? '+' : ''}{lambdaDelta.toFixed(3)}
+              </span>
+            </p>
+          )}
         </motion.div>
 
         {/* 3 headlines */}
@@ -125,11 +126,11 @@ export function LoopAnalysis() {
         <div>
               <div className="space-y-6">
 
-                {/* λ stat boxes */}
+                {/* Tension stat boxes */}
                 <div className="grid grid-cols-3 gap-3">
-                  <StatBox label="Prev λ"    value={prevLambda.toFixed(2)}  color="#9ca3af" />
-                  <StatBox label="Current λ" value={newLambda.toFixed(2)}   color={lambdaColor} />
-                  <StatBox label="Δλ"        value={`${lambdaDelta >= 0 ? '+' : ''}${lambdaDelta.toFixed(3)}`} color={deltaColor} />
+                  <StatBox label="Tension Before" value={tensionLabel(prevLambda)}  color="#9ca3af" sub={isDirector ? `λ ${prevLambda.toFixed(2)}` : undefined} />
+                  <StatBox label="Tension Now"    value={tensionLabel(newLambda)}   color={lambdaColor} sub={isDirector ? `λ ${newLambda.toFixed(2)}` : undefined} />
+                  <StatBox label="Change"         value={lambdaDelta > 0.05 ? 'Rising' : lambdaDelta < -0.05 ? 'Easing' : 'Stable'} color={deltaColor} sub={isDirector ? `${lambdaDelta >= 0 ? '+' : ''}${lambdaDelta.toFixed(3)}` : undefined} />
                 </div>
 
                 {/* Active cascades */}
@@ -269,11 +270,19 @@ export function LoopAnalysis() {
   );
 }
 
-function StatBox({ label, value, color }: { label: string; value: string; color: string }) {
+function tensionLabel(lambda: number): string {
+  if (lambda < 1.5) return 'Stable';
+  if (lambda < 2.0) return 'Elevated';
+  if (lambda < 2.5) return 'Critical';
+  return 'Extreme';
+}
+
+function StatBox({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
   return (
     <div className="bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl p-3 text-center">
       <div className="text-xs text-gray-600 uppercase tracking-wider mb-1">{label}</div>
-      <div className="text-xl font-bold font-mono" style={{ color }}>{value}</div>
+      <div className="text-xl font-bold" style={{ color }}>{value}</div>
+      {sub && <div className="text-xs font-mono text-gray-600 mt-1">{sub}</div>}
     </div>
   );
 }
