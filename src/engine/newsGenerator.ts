@@ -134,25 +134,24 @@ function getCascadeHeadlines(
 
 // Special post-turn LoopAnalysis quote referencing 2020 parallel
 export function getLoopAnalysisQuote(
-  prevLambda: number,
+  _prevLambda: number,
   newLambda: number,
   triggeringActionLabel: string,
   activeCascades: string[]
 ): string {
-  const delta = (newLambda - prevLambda).toFixed(2);
-  const base = `λ moved ${prevLambda.toFixed(2)} → ${newLambda.toFixed(2)} on "${triggeringActionLabel}"`;
+  const base = `"${triggeringActionLabel}" pushed global tension higher this turn`;
 
   if (newLambda >= GAME_THEORY_DATA.lambdaThresholds.lockNash) {
-    return `${base}. Nash equilibrium is now locked — cooperation payoffs have collapsed and every faction is defecting rationally. This is the attractor state, not a mistake.`;
+    return `${base}. Cooperation has broken down — every faction is now defecting rationally. No single player can reverse this alone.`;
   }
   if (activeCascades.includes('factory_blackout')) {
-    return `${base}. Factory blackouts are cascading — the same industrial shock that hit Italy in February 2020 before the world understood what was spreading.`;
+    return `${base}. Factory blackouts are cascading — industrial supply chains are seizing up across the region.`;
   }
   if (activeCascades.includes('food_shortage')) {
-    return `${base}. Food supply chains are fracturing. Once logistics confidence breaks, restoring it takes 6–8 turns of coordinated action no faction currently has incentive to take.`;
+    return `${base}. Food supply chains are fracturing. Once logistics confidence breaks, restoring it requires coordinated action no faction currently has incentive to take.`;
   }
   if (activeCascades.includes('war_escalation')) {
-    return `${base}. Military escalation triggered — the G_Overreach loop is running exactly as modeled: fear forces action, action multiplies fear.`;
+    return `${base}. Military escalation is now active — each move invites a counter-move, and the cycle is self-reinforcing.`;
   }
-  return `${base}. Each uncoordinated Overreach adds λ for every player. (Δλ = +${delta})`;
+  return `${base}. Every uncoordinated move raises pressure for all players — including the ones who stayed quiet this turn.`;
 }
