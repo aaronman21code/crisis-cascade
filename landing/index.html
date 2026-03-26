@@ -818,84 +818,75 @@
     <h2 class="reveal">One shock. Eight cascades.</h2>
     <p class="section-sub reveal">Energy disruption triggers fertilizer shortages, chip embargoes, food crises — each cascade feeds the next. The simulation models all of them simultaneously.</p>
 
-    <!-- Cascade chain SVG — desktop (2 rows of 4) -->
-    <svg class="cascade-svg-wrap svg-desktop reveal" viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" aria-label="Resource cascade chain">
-      <defs>
-        <marker id="carr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L7,3 z" fill="#3a3a4a" />
-        </marker>
-        <marker id="carr-down" markerWidth="7" markerHeight="7" refX="3" refY="5" orient="auto">
-          <path d="M0,0 L6,0 L3,7 z" fill="#3a3a4a" />
-        </marker>
-      </defs>
+    <!-- Cascade radial SVG — desktop -->
+    <svg class="cascade-svg-wrap svg-desktop reveal" viewBox="0 0 560 560" xmlns="http://www.w3.org/2000/svg" aria-label="Resource cascade radial diagram">
+      <!-- Spoke lines from center to each node -->
+      <!-- Center: 280,280. Nodes at r=200, angles: 0°,45°,90°,135°,180°,225°,270°,315° -->
+      <!-- 0°  top:      280,80  -->
+      <!-- 45° top-right: 421,139 -->
+      <!-- 90° right:     480,280 -->
+      <!-- 135° bot-right: 421,421 -->
+      <!-- 180° bottom:   280,480 -->
+      <!-- 225° bot-left:  139,421 -->
+      <!-- 270° left:      80,280 -->
+      <!-- 315° top-left:  139,139 -->
+      <line x1="280" y1="255" x2="280" y2="118"  stroke="#2a2a3a" stroke-width="1.2"/>
+      <line x1="300" y1="262" x2="404" y2="155"  stroke="#2a2a3a" stroke-width="1.2"/>
+      <line x1="305" y1="280" x2="443" y2="280"  stroke="#2a2a3a" stroke-width="1.2"/>
+      <line x1="300" y1="298" x2="404" y2="405"  stroke="#2a2a3a" stroke-width="1.2"/>
+      <line x1="280" y1="305" x2="280" y2="443"  stroke="#2a2a3a" stroke-width="1.2"/>
+      <line x1="260" y1="298" x2="156" y2="405"  stroke="#2a2a3a" stroke-width="1.2"/>
+      <line x1="255" y1="280" x2="117" y2="280"  stroke="#2a2a3a" stroke-width="1.2"/>
+      <line x1="260" y1="262" x2="156" y2="155"  stroke="#2a2a3a" stroke-width="1.2"/>
 
-      <!-- Row 1 -->
-      <rect x="4"   y="12" width="158" height="44" rx="20" fill="#0d0d12" stroke="#f97316" stroke-width="1.5"/>
-      <text x="83"  y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f97316">FACTORY BLACKOUT</text>
-      <text x="83"  y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">Asia/Europe industrial shutdown</text>
+      <!-- Center node: ENERGY SHOCK -->
+      <ellipse cx="280" cy="280" rx="58" ry="30" fill="#1a0a00" stroke="#f97316" stroke-width="2"/>
+      <text x="280" y="276" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#f97316">ENERGY</text>
+      <text x="280" y="290" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#f97316">SHOCK</text>
 
-      <line x1="164" y1="34" x2="186" y2="34" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+      <!-- Node 1: Factory Blackout — top (280,80) -->
+      <rect x="200" y="58" width="160" height="36" rx="18" fill="#0d0d12" stroke="#f97316" stroke-width="1.5"/>
+      <text x="280" y="81" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f97316">FACTORY BLACKOUT</text>
 
-      <rect x="190" y="12" width="155" height="44" rx="20" fill="#0d0d12" stroke="#f59e0b" stroke-width="1.5"/>
-      <text x="268" y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f59e0b">SE ASIA LOCKDOWN</text>
-      <text x="268" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">fuel rationing, 4-day weeks</text>
+      <!-- Node 2: SE Asia Lockdown — top-right (421,139) -->
+      <rect x="341" y="117" width="160" height="36" rx="18" fill="#0d0d12" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="421" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f59e0b">SE ASIA LOCKDOWN</text>
 
-      <line x1="347" y1="34" x2="369" y2="34" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+      <!-- Node 3: Fertilizer Crisis — right (480,280) -->
+      <rect x="443" y="258" width="160" height="36" rx="18" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
+      <text x="523" y="281" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f87171">FERTILIZER CRISIS</text>
 
-      <rect x="373" y="12" width="155" height="44" rx="20" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
-      <text x="451" y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f87171">FERTILIZER CRISIS</text>
-      <text x="451" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">urea/phosphate collapse</text>
+      <!-- Node 4: Food Inflation — bottom-right (421,421) -->
+      <rect x="341" y="399" width="160" height="36" rx="18" fill="#0d0d12" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="421" y="422" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#ef4444">FOOD INFLATION</text>
 
-      <line x1="530" y1="34" x2="552" y2="34" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+      <!-- Node 5: Migration Waves — bottom (280,480) -->
+      <rect x="200" y="458" width="160" height="36" rx="18" fill="#0d0d12" stroke="#dc2626" stroke-width="1.5"/>
+      <text x="280" y="481" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#dc2626">MIGRATION WAVES</text>
 
-      <rect x="556" y="12" width="200" height="44" rx="20" fill="#0d0d12" stroke="#ef4444" stroke-width="1.5"/>
-      <text x="656" y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#ef4444">FOOD INFLATION</text>
-      <text x="656" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">export bans, rationing</text>
+      <!-- Node 6: Dedollarization — bottom-left (139,421) -->
+      <rect x="59" y="399" width="160" height="36" rx="18" fill="#0d0d12" stroke="#c084fc" stroke-width="1.5"/>
+      <text x="139" y="422" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#c084fc">DEDOLLARIZATION</text>
 
-      <!-- Wrap arrow row 1 → row 2 (right side down) -->
-      <path d="M 756,34 Q 762,34 762,105 Q 762,144 756,144" fill="none" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+      <!-- Node 7: Taiwan Chips — left (80,280) -->
+      <rect x="-43" y="258" width="160" height="36" rx="18" fill="#0d0d12" stroke="#b91c1c" stroke-width="1.5"/>
+      <text x="37" y="281" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#b91c1c">TAIWAN CHIPS</text>
 
-      <!-- Row 2 (right to left) -->
-      <rect x="556" y="122" width="200" height="44" rx="20" fill="#0d0d12" stroke="#dc2626" stroke-width="1.5"/>
-      <text x="656" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#dc2626">MIGRATION WAVES</text>
-      <text x="656" y="157" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">mass displacement</text>
-
-      <line x1="554" y1="144" x2="532" y2="144" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
-
-      <rect x="373" y="122" width="155" height="44" rx="20" fill="#0d0d12" stroke="#b91c1c" stroke-width="1.5"/>
-      <text x="451" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#b91c1c">TAIWAN CHIPS</text>
-      <text x="451" y="157" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">semiconductor collapse</text>
-
-      <line x1="371" y1="144" x2="349" y2="144" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
-
-      <rect x="190" y="122" width="155" height="44" rx="20" fill="#0d0d12" stroke="#c084fc" stroke-width="1.5"/>
-      <text x="268" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#c084fc">DEDOLLARIZATION</text>
-      <text x="268" y="157" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">BRICS+Crypto bypass rails</text>
-
-      <line x1="188" y1="144" x2="166" y2="144" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
-
-      <rect x="4"   y="122" width="158" height="44" rx="20" fill="#0d0d12" stroke="#7f1d1d" stroke-width="2"/>
-      <text x="83"  y="139" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#ef4444">FULL ENERGY</text>
-      <text x="83"  y="153" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#ef4444">LOCKDOWN</text>
+      <!-- Node 8: Full Energy Lockdown — top-left (139,139) -->
+      <rect x="59" y="117" width="160" height="36" rx="18" fill="#0d0d12" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="139" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#a78bfa">FULL ENERGY LOCKDOWN</text>
     </svg>
 
     <!-- Cascade mobile fallback -->
     <div class="svg-mobile">
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f97316;"></span><div><div class="mobile-step-label">Factory Blackout</div><div class="mobile-step-sub">Asia/Europe industrial shutdown</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f59e0b;"></span><div><div class="mobile-step-label">SE Asia Lockdown</div><div class="mobile-step-sub">Fuel rationing, 4-day working weeks</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div><div class="mobile-step-label">Fertilizer Crisis</div><div class="mobile-step-sub">Urea/phosphate production collapses</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#ef4444;"></span><div><div class="mobile-step-label">Food Inflation</div><div class="mobile-step-sub">Export bans, rationing, price surge</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#dc2626;"></span><div><div class="mobile-step-label">Migration Waves</div><div class="mobile-step-sub">Mass displacement into stable regions</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#b91c1c;"></span><div><div class="mobile-step-label">Taiwan Chips</div><div class="mobile-step-sub">Semiconductor supply collapses</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#c084fc;"></span><div><div class="mobile-step-label">Dedollarization</div><div class="mobile-step-sub">BRICS+Crypto bypass legacy rails</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#7f1d1d;"></span><div><div class="mobile-step-label" style="color:#ef4444;">Full Energy Lockdown</div><div class="mobile-step-sub">3–4 billion people under restrictions</div></div></div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f97316;"></span><div class="mobile-step-label">Factory Blackout</div></div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f59e0b;"></span><div class="mobile-step-label">SE Asia Lockdown</div></div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div class="mobile-step-label">Fertilizer Crisis</div></div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#ef4444;"></span><div class="mobile-step-label">Food Inflation</div></div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#dc2626;"></span><div class="mobile-step-label">Migration Waves</div></div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#c084fc;"></span><div class="mobile-step-label">Dedollarization</div></div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#b91c1c;"></span><div class="mobile-step-label">Taiwan Chips</div></div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#a78bfa;"></span><div class="mobile-step-label" style="color:#a78bfa;">Full Energy Lockdown</div></div>
     </div>
 
     <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151; margin-top:0.25rem;" class="reveal">// Cascade events fire automatically when thresholds are crossed. You can trigger them — or try to prevent them.</p>
