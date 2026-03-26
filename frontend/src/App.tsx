@@ -5,6 +5,7 @@ import { useGameStore } from './store/game';
 import { Dashboard } from './components/Dashboard';
 import { LoopAnalysis } from './components/LoopAnalysis';
 import { FactionId } from '@engine/gameTheoryData';
+import { audioEngine } from './utils/audioEngine';
 
 const FACTIONS: Array<{ id: FactionId | 'DIRECTOR'; label: string; desc: string; warCry: string; color: string; textColor: string }> = [
   { id: 'US',       label: 'US / Israel Bloc',  desc: 'Reopen Hormuz. Preserve petrodollar. No full war.',          warCry: 'Hold the strait. No war. No surrender.',        color: 'border-blue-500',   textColor: '#60a5fa' },
@@ -52,6 +53,7 @@ export default function App() {
 
   function handleJoin() {
     if (!selectedFaction || !inputRoom || !inputName) return;
+    audioEngine.init();
     joinRoom(inputRoom.toUpperCase(), selectedFaction, inputName);
     setScreen('lobby');
   }

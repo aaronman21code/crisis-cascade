@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import { GameState, INITIAL_STATE } from '@engine/logicEngine';
 import { FactionId } from '@engine/gameTheoryData';
+import { audioEngine } from '../utils/audioEngine';
 
 type Phase = 'lobby' | 'g_delay' | 'm_shock' | 'p_fear' | 'g_overreach' | 'resolving' | 'analysis';
 
@@ -95,12 +96,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     socket.on('game:started', ({ state }: { state: GameState }) => {
       set({ gameState: state, phase: 'g_delay' });
+      audioEngine.startMusic();
     });
 
     socket.on('phase:change', ({ phase }: { phase: Phase }) => {
       // Don't auto-advance away from analysis — user must click Continue
       if (get().phase === 'analysis') return;
       set({ phase });
+      audioEngine.playPhaseTransition();
     });
 
     socket.on('action:progress', (progress: { submitted: number; total: number }) => {
@@ -130,6 +133,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pendingActionId: null,
         actionsProgress: { submitted: 0, total: 0 },
       });
+
+      // Audio: update music layers based on new λ
+      audioEngine.updateLambda(state.globalLambda);
+
+      // Audio: cascade fired
+      const newCascades = state.activeCascades.filter(c => !prevState.activeCascades.includes(c));
+      if (newCascades.length > 0) audioEngine.playCascadeFire();
+
+      // Audio: λ threshold crossings
+      if (prevState.globalLambda < 2.0 && state.globalLambda >= 2.0) audioEngine.playLambdaThreshold();
+      if (prevState.globalLambda < 2.5 && state.globalLambda >= 2.5) audioEngine.playLambdaThreshold();
     });
 
     socket.on('game:over', ({ winner, state }: { winner: string; state: GameState }) => {
@@ -137,6 +151,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     socket.on('game:reset', ({ state }: { state: GameState }) => {
+      audioEngine.stopMusic();
       set({
         gameState: state,
         prevState: null,
@@ -166,6 +181,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   submitAction: (actionId, delayAction) => {
     get().socket?.emit('action:submit', { actionId, delayAction });
     set({ pendingActionId: actionId });
+    audioEngine.playActionLock();
   },
 
   submitDirectorActions: (actions) => {

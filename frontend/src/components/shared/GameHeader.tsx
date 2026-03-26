@@ -1,5 +1,6 @@
 import { PhaseBar } from './PhaseBar';
 import { LambdaHero } from './LambdaHero';
+import { MuteButton } from './MuteButton';
 import { useGameStore } from '../../store/game';
 
 const FACTION_COLORS: Record<string, string> = {
@@ -26,6 +27,7 @@ export function GameHeader({ showLambda = false }: Props) {
       </div>
       <div className="flex items-center gap-4">
         {showLambda && <LambdaHero lambda={gameState.globalLambda} size="sm" />}
+        <MuteButton />
         <button
           onClick={() => { if (confirm('Reset? All progress will be lost.')) resetGame(); }}
           className="text-xs text-gray-600 hover:text-red-400 transition"
