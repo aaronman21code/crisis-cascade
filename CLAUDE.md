@@ -113,6 +113,14 @@ LEGACY=#c084fc  CRYPTO=#fb923c  EUROPE=#34d399  SE_ASIA=#f59e0b  DIRECTOR=#fffff
 - **Director** (`playerFaction === 'DIRECTOR'`) always sees raw numbers; `showRaw={true}` on ActionCard, `isDirector={true}` on FactionIntelPanel
 - Action count is dynamic: 3 (λ<2.0) / 4 (λ 2.0–2.5) / 5 (λ≥2.5) — controlled by `scoreActions()` in stanceEngine.ts
 
+## Landing Page
+`landing.html` — standalone single-file landing page (not part of the React app).
+- Pure HTML + CSS + vanilla JS, no frameworks
+- Deployed separately from the sim (can be hosted on any static host or Vercel root)
+- Sections: Hero (λ bg animation + Hormuz map SVG + live stat chips) → Game Theory → Sub-Games (payoff matrix SVG) → G-M-P-G Loop (animated SVG) → Problem → Factions (relationship web SVG, pulse-glow cards) → Cascade chain SVG → Testimonials → CTA
+- Animations: scroll-triggered reveals (IntersectionObserver), tension bar (scroll-driven), loop node highlight sequence, hero stat tickers, faction card glow pulse
+- Links to: `https://crisis-cascade.vercel.app`
+
 ## Full Reference
 See `BUILD_REFERENCE.md` for complete architecture docs.
 See `src/engine/ENGINE_API.md` for all engine exports.

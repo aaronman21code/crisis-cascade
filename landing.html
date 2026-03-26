@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crisis Cascade: Hormuz 2026</title>
+  <meta name="description" content="A playable game-theoretic simulation that lets you see how the G-M-P-G Loop turns small decisions into global regime shifts." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #0d0d12;
+      --border: #1a1a2e;
+      --border-mid: #2a2a3a;
+      --text: #ffffff;
+      --muted: #6b7280;
+      --muted-light: #9ca3af;
+      --red: #dc2626;
+      --red-hover: #ef4444;
+      --emerald: #10b981;
+      --orange: #f97316;
+      --red-accent: #f87171;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 10, 15, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--red-accent);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      border: none;
+    }
+
+    .btn-primary { background: var(--red); color: #fff; }
+    .btn-primary:hover { background: var(--red-hover); }
+    .btn-sm { padding: 0.4rem 1rem; font-size: 0.8rem; }
+    .btn-large { padding: 1rem 2.5rem; font-size: 1.05rem; border-radius: 8px; }
+
+    /* ── Tension bar ── */
+    #tension-bar-wrap {
+      position: sticky;
+      top: 56px;
+      z-index: 99;
+      height: 3px;
+      background: #111118;
+    }
+
+    #tension-bar {
+      height: 100%;
+      width: 0%;
+      transition: width 0.1s linear, background 0.6s ease;
+      background: var(--emerald);
+    }
+
+    #tension-label {
+      position: absolute;
+      right: 0.75rem;
+      top: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0;
+      transition: opacity 0.4s;
+      pointer-events: none;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      min-height: 92vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6rem 2rem;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    #lambda-bg {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(8rem, 22vw, 20rem);
+      font-weight: 700;
+      opacity: 0.07;
+      transition: color 1.2s ease;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 760px;
+      width: 100%;
+    }
+
+    .hero-text { min-width: 0; }
+
+    .hero-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--red-accent);
+      margin-bottom: 1.25rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--muted-light);
+      max-width: 600px;
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
+
+    /* ── Stats bar ── */
+    .hero-stats {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.25rem;
+    }
+
+    .stat-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      background: var(--surface);
+      border: 1px solid var(--border-mid);
+      border-radius: 6px;
+      padding: 0.3rem 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .stat-chip-label { color: var(--muted); }
+    .stat-chip-val { font-weight: 700; transition: color 0.8s; }
+    .stat-chip-arrow { font-size: 0.55rem; color: var(--muted); }
+
+    .hero-note {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+
+    /* ── Scroll reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* ── Sections ── */
+    section {
+      padding: 5rem 2rem;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    section h2 {
+      font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.6rem;
+    }
+
+    .section-sub {
+      color: var(--muted-light);
+      font-size: 0.95rem;
+      line-height: 1.65;
+      margin-bottom: 2rem;
+    }
+
+    /* ── GT cards ── */
+    .gt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin: 1.75rem 0 1.25rem;
+    }
+
+    .gt-card {
+      background: var(--surface);
+      border: 1px solid var(--border-mid);
+      border-radius: 10px;
+      padding: 1.1rem;
+    }
+
+    .gt-card-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--emerald);
+      margin-bottom: 0.5rem;
+    }
+
+    .gt-card h4 { font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem; }
+    .gt-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.55; margin: 0; }
+
+    /* ── Problem cards ── */
+    .problem-grid { display: grid; gap: 0.6rem; margin: 1.75rem 0 1rem; }
+
+    .problem-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+      border-radius: 8px;
+      padding: 0.85rem 1.1rem;
+      font-size: 0.88rem;
+      color: var(--muted-light);
+      line-height: 1.5;
+    }
+
+    .problem-card strong { color: #fff; display: block; margin-bottom: 0.2rem; font-size: 0.85rem; }
+
+    /* ── Loop SVG ── */
+    .loop-svg-wrap { width: 100%; overflow: visible; }
+
+    /* ── Faction grid ── */
+    .faction-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 1.75rem 0 1.25rem;
+    }
+
+    .faction-card {
+      border-radius: 8px;
+      padding: 0.85rem 0.9rem;
+      border-left: 3px solid currentColor;
+      transition: box-shadow 0.4s ease;
+    }
+
+    .faction-card-name { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .faction-card-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.45; }
+
+    /* Pulse glow keyframe — color injected via inline style */
+    @keyframes faction-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 transparent; }
+      50%       { box-shadow: 0 0 10px 2px var(--faction-glow); }
+    }
+
+    .director-callout {
+      background: transparent;
+      border: 1px solid var(--border-mid);
+      border-radius: 8px;
+      padding: 0.85rem 1.1rem;
+      font-size: 0.85rem;
+      color: var(--muted-light);
+      margin-top: 0;
+    }
+    .director-callout strong { color: #fff; }
+
+    /* ── Faction web SVG ── */
+    .faction-web-wrap { width: 100%; overflow: visible; margin: 2rem 0 0.5rem; }
+
+    /* ── Cascade SVG ── */
+    .cascade-svg-wrap { width: 100%; overflow: visible; margin: 1.5rem 0; }
+
+    /* ── Testimonials ── */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .testimonial {
+      background: var(--surface);
+      border: 1px solid var(--border-mid);
+      border-radius: 12px;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .testimonial blockquote { font-size: 0.95rem; font-style: italic; color: var(--muted-light); line-height: 1.7; }
+    .testimonial cite { font-size: 0.75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-style: normal; }
+
+    /* ── Final CTA ── */
+    .cta-section { text-align: center; padding: 6rem 2rem; border-top: 1px solid var(--border); }
+    .cta-section h2 { font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 900; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+    .cta-section p { color: var(--muted); margin-bottom: 2rem; font-size: 0.9rem; font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Footer ── */
+    footer { border-top: 1px solid var(--border); padding: 3rem 2rem; max-width: 820px; margin: 0 auto; }
+    footer p { color: var(--muted); font-size: 0.85rem; line-height: 1.7; margin-bottom: 1rem; }
+    footer .footer-bottom { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #374151; letter-spacing: 0.05em; margin-bottom: 0; }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0 2rem; }
+
+    /* ── Faction web edge pulse ── */
+    @keyframes edge-pulse {
+      0%, 100% { opacity: 0.25; }
+      50%       { opacity: 0.65; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      nav { padding: 0 1.25rem; }
+      .hero, section { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .faction-grid { grid-template-columns: repeat(2, 1fr); }
+      .svg-desktop { display: none !important; }
+      .svg-mobile { display: flex !important; }
+    }
+
+    @media (min-width: 641px) {
+      .svg-mobile { display: none !important; }
+      .svg-desktop { display: block; }
+    }
+
+    .svg-mobile {
+      flex-direction: column;
+      gap: 0.5rem;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    .mobile-step {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border-mid);
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+    }
+
+    .mobile-step-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .mobile-step-label { font-size: 0.8rem; font-weight: 700; color: #fff; }
+    .mobile-step-sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+    .mobile-arrow { text-align: center; color: var(--border-mid); font-size: 0.75rem; line-height: 1; padding: 0 0 0 19px; }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <span class="nav-logo">Crisis Cascade</span>
+    <a href="https://crisis-cascade-frontend.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Play Now →</a>
+  </nav>
+
+  <!-- Tension bar -->
+  <div id="tension-bar-wrap">
+    <div id="tension-bar"></div>
+    <span id="tension-label">STABLE</span>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-bg">
+      <span id="lambda-bg" style="color: var(--emerald);">λ 1.00</span>
+    </div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <div class="hero-tag">Crisis Cascade: Hormuz 2026</div>
+        <h1>The same mechanism that drove the 2020 lockdowns is running again — this time on energy, money, and power.</h1>
+        <p>A browser-based simulation built to make the pattern visible before it becomes obvious to everyone else.</p>
+        <div class="hero-cta">
+          <a href="https://crisis-cascade-frontend.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="font-size:1rem; padding: 0.85rem 2rem;">
+            Play the Simulation →
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-chip">
+            <span class="stat-chip-label">Oil</span>
+            <span class="stat-chip-val" id="stat-oil" style="color:#f97316;">$118/bbl</span>
+            <span class="stat-chip-arrow">▲</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Panic</span>
+            <span class="stat-chip-val" id="stat-panic" style="color:#10b981;">34</span>
+            <span class="stat-chip-arrow">▲</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">λ</span>
+            <span class="stat-chip-val" id="stat-lambda" style="color:#10b981;">1.00</span>
+            <span class="stat-chip-arrow">▲</span>
+          </div>
+        </div>
+        <p class="hero-note">Free to play &nbsp;·&nbsp; No signup required &nbsp;·&nbsp; Best on desktop</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- Section: Game Theory -->
+  <section>
+    <div class="section-tag reveal" style="color: var(--emerald);">The Framework</div>
+    <h2 class="reveal">There's a machine underneath every major crisis. Most people never see it.</h2>
+    <p class="section-sub reveal">Game theory was built to model nuclear deterrence. Today the same logic governs oil blockades, currency wars, and supply chain collapse — running simultaneously, feeding each other.</p>
+
+    <div class="gt-grid">
+      <div class="gt-card reveal" style="transition-delay:0s">
+        <div class="gt-card-label">Nash Equilibrium</div>
+        <h4>Crises don't end — they lock.</h4>
+        <p>No player can improve their situation by changing strategy alone. The outcome nobody wanted becomes the only stable state.</p>
+      </div>
+      <div class="gt-card reveal" style="transition-delay:0.1s">
+        <div class="gt-card-label">Prisoner's Dilemma</div>
+        <h4>Both defect, both lose.</h4>
+        <p>The structure of sanctions, blockades, and arms races. Defection isn't irrational — it's the only rational move given what everyone else is doing.</p>
+      </div>
+      <div class="gt-card reveal" style="transition-delay:0.2s">
+        <div class="gt-card-label">Fear Multiplier (λ)</div>
+        <h4>Once it crosses a threshold, cooperation breaks.</h4>
+        <p>Every aggressive move raises systemic tension for all players — including neutral ones. The math changes. Defection becomes dominant.</p>
+      </div>
+      <div class="gt-card reveal" style="transition-delay:0.3s">
+        <div class="gt-card-label">Cascade Dynamics</div>
+        <h4>One shock triggers the next.</h4>
+        <p>Energy → fertilizer → food → migration. Each domain is linked. The simulation models these chains in real time so you can see what's coming.</p>
+      </div>
+    </div>
+
+    <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151;" class="reveal">// You don't need a PhD. You just need to play a few turns.</p>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- Section: Sub-Games -->
+  <section>
+    <div class="section-tag reveal" style="color: #c084fc;">Sub-Game Equilibria</div>
+    <h2 class="reveal">Eight interlocking strategic games. Running simultaneously.</h2>
+    <p class="section-sub reveal">Each pair of factions runs its own game beneath the surface. Some are shifting. Some are locking. The simulation tracks all of them — and shows you which ones are about to tip.</p>
+
+    <!-- Payoff matrix SVG -->
+    <svg class="reveal svg-desktop" viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg" style="width:100%; margin-bottom:1.5rem;" aria-label="Iran vs US payoff matrix">
+      <!-- Background -->
+      <rect x="0" y="0" width="420" height="190" rx="10" fill="#0d0d12" stroke="#2a2a3a" stroke-width="1"/>
+
+      <!-- Title -->
+      <text x="20" y="24" font-family="JetBrains Mono, monospace" font-size="8" fill="#6b7280" letter-spacing="1.5" text-transform="uppercase">SAMPLE SUB-GAME: IRAN vs US — CHICKEN</text>
+
+      <!-- Col headers -->
+      <text x="225" y="55" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#60a5fa" font-weight="700">US: Deter</text>
+      <text x="340" y="55" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#60a5fa" font-weight="700">US: Strike</text>
+
+      <!-- Row headers -->
+      <text x="95" y="100" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4ade80" font-weight="700">Iran: Block</text>
+      <text x="95" y="148" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4ade80" font-weight="700">Iran: Yield</text>
+
+      <!-- Grid lines -->
+      <line x1="145" y1="60" x2="145" y2="175" stroke="#2a2a3a" stroke-width="1"/>
+      <line x1="285" y1="60" x2="285" y2="175" stroke="#2a2a3a" stroke-width="1"/>
+      <line x1="145" y1="120" x2="400" y2="120" stroke="#2a2a3a" stroke-width="1"/>
+      <line x1="145" y1="60" x2="400" y2="60" stroke="#2a2a3a" stroke-width="1"/>
+      <line x1="145" y1="175" x2="400" y2="175" stroke="#2a2a3a" stroke-width="1"/>
+      <line x1="400" y1="60" x2="400" y2="175" stroke="#2a2a3a" stroke-width="1"/>
+
+      <!-- Cell: Iran Block / US Deter -->
+      <text x="225" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#9ca3af">−2, −3</text>
+      <text x="225" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#6b7280">standoff</text>
+
+      <!-- Cell: Iran Block / US Strike -->
+      <text x="340" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#f87171">−8, −6</text>
+      <text x="340" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#6b7280">mutual loss</text>
+
+      <!-- Cell: Iran Yield / US Deter — Nash Equilibrium highlighted -->
+      <rect x="146" y="121" width="138" height="53" rx="0" fill="#10b98110"/>
+      <rect x="146" y="121" width="138" height="53" rx="0" fill="none" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
+      <text x="225" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#10b981">+4, +2</text>
+      <text x="225" y="160" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#10b981">← Nash Eq.</text>
+
+      <!-- Cell: Iran Yield / US Strike -->
+      <text x="340" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#9ca3af">−1, −4</text>
+      <text x="340" y="160" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#6b7280">asymmetric</text>
+    </svg>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:0.6rem; margin-top:0.25rem;">
+      <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #60a5fa; border-radius:8px; padding:0.85rem 1rem; transition-delay:0s">
+        <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">CHICKEN</div>
+        <div style="font-size:0.8rem; font-weight:700; color:#60a5fa; margin-bottom:0.25rem;">Iran–US Escalation</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">Repeated ladder game. Mutual deterrence or military exchange at the strait.</div>
+      </div>
+      <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #facc15; border-radius:8px; padding:0.85rem 1rem; transition-delay:0.06s">
+        <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">STAG HUNT</div>
+        <div style="font-size:0.8rem; font-weight:700; color:#facc15; margin-bottom:0.25rem;">BRICS Yuan vs Petrodollar</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">Yuan settlement only becomes dominant if enough players commit simultaneously.</div>
+      </div>
+      <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #f87171; border-radius:8px; padding:0.85rem 1rem; transition-delay:0.12s">
+        <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">ZERO-SUM</div>
+        <div style="font-size:0.8rem; font-weight:700; color:#f87171; margin-bottom:0.25rem;">US AI vs China Robotics</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">Taiwan semiconductor chokepoint. Tech dominance race accelerating decoupling.</div>
+      </div>
+      <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #c084fc; border-radius:8px; padding:0.85rem 1rem; transition-delay:0.18s">
+        <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">MARKET CHICKEN</div>
+        <div style="font-size:0.8rem; font-weight:700; color:#c084fc; margin-bottom:0.25rem;">Legacy Finance vs Crypto</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">Zero-sum race for the global settlement layer as SWIFT volumes collapse.</div>
+      </div>
+      <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #fb923c; border-radius:8px; padding:0.85rem 1rem; transition-delay:0.24s">
+        <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">N-PLAYER NETWORK</div>
+        <div style="font-size:0.8rem; font-weight:700; color:#fb923c; margin-bottom:0.25rem;">Multipolar Global Order</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">BRICS+ coalition building. Every new member shifts the payoff matrix for everyone else.</div>
+      </div>
+      <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #34d399; border-radius:8px; padding:0.85rem 1rem; transition-delay:0.30s">
+        <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">COORDINATION</div>
+        <div style="font-size:0.8rem; font-weight:700; color:#34d399; margin-bottom:0.25rem;">EuropeBloc Energy Fracture</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">Internal EU coordination failure. Eastern and Western members face opposite incentives.</div>
+      </div>
+      <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #f59e0b; border-radius:8px; padding:0.85rem 1rem; transition-delay:0.36s">
+        <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">AMPLIFIER</div>
+        <div style="font-size:0.8rem; font-weight:700; color:#f59e0b; margin-bottom:0.25rem;">SE Asia Early Lockdown</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">Fear-driven overreaction loop. Early restriction signals amplify regional panic.</div>
+      </div>
+      <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #ef4444; border-radius:8px; padding:0.85rem 1rem; transition-delay:0.42s">
+        <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">CASCADE</div>
+        <div style="font-size:0.8rem; font-weight:700; color:#ef4444; margin-bottom:0.25rem;">Fertilizer → Food → Migration</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">Once the agricultural cascade starts, no single faction can stop it alone.</div>
+      </div>
+    </div>
+
+    <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151; margin-top:1rem;" class="reveal">// The Loop Analysis screen shows you the equilibrium state of each sub-game after every turn.</p>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- Section: The Loop -->
+  <section>
+    <div class="section-tag reveal" style="color: #f87171;">The G-M-P-G Loop</div>
+    <h2 class="reveal">Every crisis follows the same four moves.</h2>
+    <p class="section-sub reveal">Not one after the other — simultaneously, feeding each other. The loop ran in 2020. It ran in 2008. It's running now.</p>
+
+    <!-- Loop SVG diagram — desktop, animated -->
+    <svg id="loop-svg" class="loop-svg-wrap svg-desktop reveal" viewBox="0 0 760 165" xmlns="http://www.w3.org/2000/svg" aria-label="G-M-P-G Loop diagram">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#3a3a4a" />
+        </marker>
+        <marker id="arr-loop" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#3a3a4a" />
+        </marker>
+      </defs>
+
+      <!-- Node 1: G_Delay -->
+      <rect id="ln0" x="4" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
+      <text x="82" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 01</text>
+      <text id="lt0" x="82" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Government Delay</text>
+      <text x="82" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Hidden moves.</text>
+      <text x="82" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Factions position.</text>
+
+      <line x1="162" y1="69" x2="192" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Node 2: M_Shock -->
+      <rect id="ln1" x="196" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#f97316" stroke-width="1.5"/>
+      <text x="274" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 02</text>
+      <text id="lt1" x="274" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Media Shock</text>
+      <text x="274" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Fear amplifies.</text>
+      <text x="274" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Headlines drive narrative.</text>
+
+      <line x1="354" y1="69" x2="384" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Node 3: P_Fear -->
+      <rect id="ln2" x="388" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#facc15" stroke-width="1.5"/>
+      <text x="466" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 03</text>
+      <text id="lt2" x="466" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Public Fear</text>
+      <text x="466" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Panic index rises.</text>
+      <text x="466" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Oil prices spike.</text>
+
+      <line x1="546" y1="69" x2="576" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Node 4: G_Overreach -->
+      <rect id="ln3" x="580" y="24" width="176" height="90" rx="8" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
+      <text x="668" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 04</text>
+      <text id="lt3" x="668" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Gov. Overreach</text>
+      <text x="668" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Factions act.</text>
+      <text x="668" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Every move raises tension.</text>
+
+      <path d="M 756,114 Q 756,150 380,150 Q 4,150 4,114" fill="none" stroke="#3a3a4a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr-loop)"/>
+    </svg>
+
+    <!-- Loop mobile fallback -->
+    <div class="svg-mobile">
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div><div class="mobile-step-label">Government Delay</div><div class="mobile-step-sub">Hidden moves. Factions position before the shock lands.</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f97316;"></span><div><div class="mobile-step-label">Media Shock</div><div class="mobile-step-sub">Fear amplifies. Headlines drive the narrative.</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#facc15;"></span><div><div class="mobile-step-label">Public Fear</div><div class="mobile-step-sub">Panic index rises. Oil prices spike.</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div><div class="mobile-step-label">Government Overreach</div><div class="mobile-step-sub">Factions act. Every move raises tension for all.</div></div></div>
+    </div>
+
+    <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151; margin-top:0.75rem;" class="reveal">// After every turn, the Loop Analysis screen breaks down exactly what happened.</p>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- Section: The Problem -->
+  <section>
+    <div class="section-tag reveal" style="color: #f87171;">What's Actually Happening</div>
+    <h2 class="reveal">The Hormuz crisis isn't one crisis. It's eight games running at the same time.</h2>
+    <p class="section-sub reveal">Most coverage focuses on tanker traffic and oil prices. That's the surface layer.</p>
+
+    <div class="problem-grid">
+      <div class="problem-card reveal" style="transition-delay:0s">
+        <strong>Military escalation between Iran, Israel, and the US</strong>
+        A game of Chicken at sea. Each side bets the other blinks first. The cost of being wrong is catastrophic for both.
+      </div>
+      <div class="problem-card reveal" style="transition-delay:0.08s">
+        <strong>The fight over whether oil stays priced in dollars</strong>
+        BRICS and China are accelerating yuan-denominated deals. Legacy Finance is fighting back through SWIFT and capital controls. The outcome rewires the global monetary system.
+      </div>
+      <div class="problem-card reveal" style="transition-delay:0.16s">
+        <strong>The resource cascade that's already running</strong>
+        Energy shortages → fertilizer shortages → food crises → migration pressure. Factory slowdowns in Asia. Crypto volumes spiking as a parallel settlement layer.
+      </div>
+      <div class="problem-card reveal" style="transition-delay:0.24s">
+        <strong>The fear threshold that changes everything</strong>
+        Below a certain point, rational actors can still coordinate. Once the fear multiplier climbs high enough, defection becomes the only rational move — for everyone. That's exactly what happened in 2020.
+      </div>
+    </div>
+
+    <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#10b981; margin-top:0.5rem;" class="reveal">// This isn't speculation. It's a working model.</p>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- Section: Factions -->
+  <section>
+    <div class="section-tag reveal" style="color: #facc15;">The Players</div>
+    <h2 class="reveal">8 factions. One board. Every move changes the math for everyone else.</h2>
+
+    <div class="faction-grid">
+      <div class="faction-card reveal" style="color:#60a5fa; background:rgba(96,165,250,0.06); --faction-glow:#60a5fa40; animation:faction-pulse 3.5s ease-in-out 0.0s infinite; transition-delay:0.00s">
+        <div class="faction-card-name" style="color:#60a5fa;">US / Israel</div>
+        <div class="faction-card-desc">Keep Hormuz open. Defend the dollar.</div>
+      </div>
+      <div class="faction-card reveal" style="color:#4ade80; background:rgba(74,222,128,0.06); --faction-glow:#4ade8040; animation:faction-pulse 3.5s ease-in-out 0.2s infinite; transition-delay:0.05s">
+        <div class="faction-card-name" style="color:#4ade80;">Iran</div>
+        <div class="faction-card-desc">Force yuan dominance. Survive the blockade.</div>
+      </div>
+      <div class="faction-card reveal" style="color:#f87171; background:rgba(248,113,113,0.06); --faction-glow:#f8717140; animation:faction-pulse 3.5s ease-in-out 0.4s infinite; transition-delay:0.10s">
+        <div class="faction-card-name" style="color:#f87171;">China</div>
+        <div class="faction-card-desc">Factories running. Chips secured.</div>
+      </div>
+      <div class="faction-card reveal" style="color:#facc15; background:rgba(250,204,21,0.06); --faction-glow:#facc1540; animation:faction-pulse 3.5s ease-in-out 0.6s infinite; transition-delay:0.15s">
+        <div class="faction-card-name" style="color:#facc15;">BRICS</div>
+        <div class="faction-card-desc">Build the parallel order.</div>
+      </div>
+      <div class="faction-card reveal" style="color:#c084fc; background:rgba(192,132,252,0.06); --faction-glow:#c084fc40; animation:faction-pulse 3.5s ease-in-out 0.8s infinite; transition-delay:0.20s">
+        <div class="faction-card-name" style="color:#c084fc;">Legacy Finance</div>
+        <div class="faction-card-desc">Defend the petrodollar at all costs.</div>
+      </div>
+      <div class="faction-card reveal" style="color:#fb923c; background:rgba(251,146,60,0.06); --faction-glow:#fb923c40; animation:faction-pulse 3.5s ease-in-out 1.0s infinite; transition-delay:0.25s">
+        <div class="faction-card-name" style="color:#fb923c;">Crypto</div>
+        <div class="faction-card-desc">Capture the settlement layer.</div>
+      </div>
+      <div class="faction-card reveal" style="color:#34d399; background:rgba(52,211,153,0.06); --faction-glow:#34d39940; animation:faction-pulse 3.5s ease-in-out 1.2s infinite; transition-delay:0.30s">
+        <div class="faction-card-name" style="color:#34d399;">EuropeBloc</div>
+        <div class="faction-card-desc">Managed fracture. Avoid war.</div>
+      </div>
+      <div class="faction-card reveal" style="color:#f59e0b; background:rgba(245,158,11,0.06); --faction-glow:#f59e0b40; animation:faction-pulse 3.5s ease-in-out 1.4s infinite; transition-delay:0.35s">
+        <div class="faction-card-name" style="color:#f59e0b;">SE Asia</div>
+        <div class="faction-card-desc">Hedge everything. Stay liquid.</div>
+      </div>
+    </div>
+
+    <!-- Faction relationship web SVG -->
+    <!-- Node positions (center 200,145, r=112):
+         US(200,33)  IRAN(279,67)  CHINA(312,145)  BRICS(279,223)
+         LEGACY(200,257)  CRYPTO(121,223)  EUROPE(88,145)  SE_ASIA(121,67) -->
+    <svg class="faction-web-wrap svg-desktop reveal" viewBox="0 0 400 290" xmlns="http://www.w3.org/2000/svg" aria-label="Faction tension web">
+
+      <!-- ── Edges (drawn under nodes) ── -->
+
+      <!-- CONFLICT / HIGH TENSION (solid, brighter) -->
+      <!-- US -- IRAN -->
+      <line x1="200" y1="33" x2="279" y2="67" stroke="#f8717170" stroke-width="2.5" style="animation:edge-pulse 2.8s ease-in-out 0.0s infinite"/>
+      <!-- US -- CHINA -->
+      <line x1="200" y1="33" x2="312" y2="145" stroke="#f8717155" stroke-width="2" style="animation:edge-pulse 3.2s ease-in-out 0.4s infinite"/>
+      <!-- LEGACY -- CRYPTO -->
+      <line x1="200" y1="257" x2="121" y2="223" stroke="#fb923c60" stroke-width="2.5" style="animation:edge-pulse 2.6s ease-in-out 1.0s infinite"/>
+      <!-- LEGACY -- BRICS -->
+      <line x1="200" y1="257" x2="279" y2="223" stroke="#c084fc55" stroke-width="2" style="animation:edge-pulse 3.0s ease-in-out 0.8s infinite"/>
+      <!-- CHINA -- US (tech) -->
+      <line x1="312" y1="145" x2="200" y2="33" stroke="#f8717140" stroke-width="1.5" style="animation:edge-pulse 3.4s ease-in-out 0.6s infinite"/>
+      <!-- IRAN -- LEGACY (sanctions pressure) -->
+      <line x1="279" y1="67" x2="200" y2="257" stroke="#4ade8045" stroke-width="1.5" style="animation:edge-pulse 3.6s ease-in-out 1.4s infinite"/>
+
+      <!-- ALIGNMENT / COOPERATION (dashed, dimmer) -->
+      <!-- IRAN -- BRICS -->
+      <line x1="279" y1="67" x2="279" y2="223" stroke="#4ade8035" stroke-width="1.2" stroke-dasharray="4 3" style="animation:edge-pulse 4.2s ease-in-out 0.2s infinite"/>
+      <!-- CHINA -- BRICS -->
+      <line x1="312" y1="145" x2="279" y2="223" stroke="#f8717135" stroke-width="1.2" stroke-dasharray="4 3" style="animation:edge-pulse 3.8s ease-in-out 0.6s infinite"/>
+      <!-- EUROPE -- US -->
+      <line x1="88" y1="145" x2="200" y2="33" stroke="#34d39935" stroke-width="1.2" stroke-dasharray="4 3" style="animation:edge-pulse 4.0s ease-in-out 1.0s infinite"/>
+      <!-- EUROPE -- LEGACY -->
+      <line x1="88" y1="145" x2="200" y2="257" stroke="#34d39930" stroke-width="1" stroke-dasharray="4 3" style="animation:edge-pulse 4.5s ease-in-out 0.3s infinite"/>
+      <!-- SE_ASIA -- CHINA -->
+      <line x1="121" y1="67" x2="312" y2="145" stroke="#f59e0b35" stroke-width="1.2" stroke-dasharray="4 3" style="animation:edge-pulse 3.9s ease-in-out 0.7s infinite"/>
+      <!-- SE_ASIA -- BRICS -->
+      <line x1="121" y1="67" x2="279" y2="223" stroke="#f59e0b30" stroke-width="1" stroke-dasharray="4 3" style="animation:edge-pulse 4.3s ease-in-out 1.2s infinite"/>
+      <!-- CRYPTO -- BRICS (settlement layer) -->
+      <line x1="121" y1="223" x2="279" y2="223" stroke="#fb923c35" stroke-width="1.2" stroke-dasharray="4 3" style="animation:edge-pulse 3.7s ease-in-out 0.5s infinite"/>
+      <!-- US -- EUROPE -->
+      <line x1="200" y1="33" x2="88" y2="145" stroke="#60a5fa30" stroke-width="1" stroke-dasharray="4 3" style="animation:edge-pulse 4.6s ease-in-out 0.9s infinite"/>
+      <!-- IRAN -- SE_ASIA (energy supply) -->
+      <line x1="279" y1="67" x2="121" y2="67" stroke="#4ade8025" stroke-width="1" stroke-dasharray="3 4" style="animation:edge-pulse 5.0s ease-in-out 1.6s infinite"/>
+
+      <!-- ── Nodes ── -->
+      <circle cx="200" cy="33"  r="23" fill="rgba(96,165,250,0.14)"  stroke="#60a5fa" stroke-width="1.5"/>
+      <text x="200" y="38"  text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" font-weight="700" fill="#60a5fa">US</text>
+
+      <circle cx="279" cy="67"  r="23" fill="rgba(74,222,128,0.14)"  stroke="#4ade80" stroke-width="1.5"/>
+      <text x="279" y="72"  text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" font-weight="700" fill="#4ade80">IRAN</text>
+
+      <circle cx="312" cy="145" r="23" fill="rgba(248,113,113,0.14)" stroke="#f87171" stroke-width="1.5"/>
+      <text x="312" y="150" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" font-weight="700" fill="#f87171">CHINA</text>
+
+      <circle cx="279" cy="223" r="23" fill="rgba(250,204,21,0.14)"  stroke="#facc15" stroke-width="1.5"/>
+      <text x="279" y="228" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" font-weight="700" fill="#facc15">BRICS</text>
+
+      <circle cx="200" cy="257" r="23" fill="rgba(192,132,252,0.14)" stroke="#c084fc" stroke-width="1.5"/>
+      <text x="200" y="262" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" font-weight="700" fill="#c084fc">LEGACY</text>
+
+      <circle cx="121" cy="223" r="23" fill="rgba(251,146,60,0.14)"  stroke="#fb923c" stroke-width="1.5"/>
+      <text x="121" y="228" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" font-weight="700" fill="#fb923c">CRYPTO</text>
+
+      <circle cx="88"  cy="145" r="23" fill="rgba(52,211,153,0.14)"  stroke="#34d399" stroke-width="1.5"/>
+      <text x="88"  y="150" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" font-weight="700" fill="#34d399">EU</text>
+
+      <circle cx="121" cy="67"  r="23" fill="rgba(245,158,11,0.14)"  stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="121" y="72"  text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" font-weight="700" fill="#f59e0b">SE ASIA</text>
+
+      <!-- Legend -->
+      <line x1="20" y1="280" x2="38" y2="280" stroke="#ffffff55" stroke-width="2"/>
+      <text x="43" y="284" font-family="JetBrains Mono, monospace" font-size="7" fill="#6b7280">conflict / tension</text>
+      <line x1="155" y1="280" x2="173" y2="280" stroke="#ffffff30" stroke-width="1" stroke-dasharray="3 3"/>
+      <text x="178" y="284" font-family="JetBrains Mono, monospace" font-size="7" fill="#6b7280">cooperation / alignment</text>
+    </svg>
+
+    <div class="director-callout reveal">
+      <strong>Director Mode</strong> — Control all eight factions simultaneously. Run what-if scenarios. Test whether coordinated calm can interrupt the loop.
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- Section: The Cascade -->
+  <section>
+    <div class="section-tag reveal" style="color: #fb923c;">Resource Cascades</div>
+    <h2 class="reveal">One shock. Eight cascades.</h2>
+    <p class="section-sub reveal">Energy disruption triggers fertilizer shortages, chip embargoes, food crises — each cascade feeds the next. The simulation models all of them simultaneously.</p>
+
+    <!-- Cascade chain SVG — desktop (2 rows of 4) -->
+    <svg class="cascade-svg-wrap svg-desktop reveal" viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" aria-label="Resource cascade chain">
+      <defs>
+        <marker id="carr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#3a3a4a" />
+        </marker>
+        <marker id="carr-down" markerWidth="7" markerHeight="7" refX="3" refY="5" orient="auto">
+          <path d="M0,0 L6,0 L3,7 z" fill="#3a3a4a" />
+        </marker>
+      </defs>
+
+      <!-- Row 1 -->
+      <rect x="4"   y="12" width="158" height="44" rx="20" fill="#0d0d12" stroke="#f97316" stroke-width="1.5"/>
+      <text x="83"  y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f97316">FACTORY BLACKOUT</text>
+      <text x="83"  y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">Asia/Europe industrial shutdown</text>
+
+      <line x1="164" y1="34" x2="186" y2="34" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+
+      <rect x="190" y="12" width="155" height="44" rx="20" fill="#0d0d12" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="268" y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f59e0b">SE ASIA LOCKDOWN</text>
+      <text x="268" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">fuel rationing, 4-day weeks</text>
+
+      <line x1="347" y1="34" x2="369" y2="34" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+
+      <rect x="373" y="12" width="155" height="44" rx="20" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
+      <text x="451" y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#f87171">FERTILIZER CRISIS</text>
+      <text x="451" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">urea/phosphate collapse</text>
+
+      <line x1="530" y1="34" x2="552" y2="34" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+
+      <rect x="556" y="12" width="200" height="44" rx="20" fill="#0d0d12" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="656" y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#ef4444">FOOD INFLATION</text>
+      <text x="656" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">export bans, rationing</text>
+
+      <!-- Wrap arrow row 1 → row 2 (right side down) -->
+      <path d="M 756,34 Q 762,34 762,105 Q 762,144 756,144" fill="none" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+
+      <!-- Row 2 (right to left) -->
+      <rect x="556" y="122" width="200" height="44" rx="20" fill="#0d0d12" stroke="#dc2626" stroke-width="1.5"/>
+      <text x="656" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#dc2626">MIGRATION WAVES</text>
+      <text x="656" y="157" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">mass displacement</text>
+
+      <line x1="554" y1="144" x2="532" y2="144" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+
+      <rect x="373" y="122" width="155" height="44" rx="20" fill="#0d0d12" stroke="#b91c1c" stroke-width="1.5"/>
+      <text x="451" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#b91c1c">TAIWAN CHIPS</text>
+      <text x="451" y="157" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">semiconductor collapse</text>
+
+      <line x1="371" y1="144" x2="349" y2="144" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+
+      <rect x="190" y="122" width="155" height="44" rx="20" fill="#0d0d12" stroke="#c084fc" stroke-width="1.5"/>
+      <text x="268" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#c084fc">DEDOLLARIZATION</text>
+      <text x="268" y="157" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#6b7280">BRICS+Crypto bypass rails</text>
+
+      <line x1="188" y1="144" x2="166" y2="144" stroke="#3a3a4a" stroke-width="1.2" marker-end="url(#carr)"/>
+
+      <rect x="4"   y="122" width="158" height="44" rx="20" fill="#0d0d12" stroke="#7f1d1d" stroke-width="2"/>
+      <text x="83"  y="139" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#ef4444">FULL ENERGY</text>
+      <text x="83"  y="153" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#ef4444">LOCKDOWN</text>
+    </svg>
+
+    <!-- Cascade mobile fallback -->
+    <div class="svg-mobile">
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f97316;"></span><div><div class="mobile-step-label">Factory Blackout</div><div class="mobile-step-sub">Asia/Europe industrial shutdown</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f59e0b;"></span><div><div class="mobile-step-label">SE Asia Lockdown</div><div class="mobile-step-sub">Fuel rationing, 4-day working weeks</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div><div class="mobile-step-label">Fertilizer Crisis</div><div class="mobile-step-sub">Urea/phosphate production collapses</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#ef4444;"></span><div><div class="mobile-step-label">Food Inflation</div><div class="mobile-step-sub">Export bans, rationing, price surge</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#dc2626;"></span><div><div class="mobile-step-label">Migration Waves</div><div class="mobile-step-sub">Mass displacement into stable regions</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#b91c1c;"></span><div><div class="mobile-step-label">Taiwan Chips</div><div class="mobile-step-sub">Semiconductor supply collapses</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#c084fc;"></span><div><div class="mobile-step-label">Dedollarization</div><div class="mobile-step-sub">BRICS+Crypto bypass legacy rails</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#7f1d1d;"></span><div><div class="mobile-step-label" style="color:#ef4444;">Full Energy Lockdown</div><div class="mobile-step-sub">3–4 billion people under restrictions</div></div></div>
+    </div>
+
+    <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151; margin-top:0.25rem;" class="reveal">// Cascade events fire automatically when thresholds are crossed. You can trigger them — or try to prevent them.</p>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- Section: Testimonials -->
+  <section style="padding-top: 4rem; padding-bottom: 4rem;">
+    <div class="section-tag reveal" style="color: #34d399;">What Players Say</div>
+    <h2 style="margin-bottom: 2rem;" class="reveal">One or two playthroughs. Then you start seeing it everywhere.</h2>
+    <div class="testimonials-grid">
+      <div class="testimonial reveal" style="transition-delay:0s">
+        <blockquote>"I played as Iran and realised within three turns exactly why the blockade logic makes sense from their perspective. That shift in frame was worth it alone."</blockquote>
+        <cite>— Strategy researcher</cite>
+      </div>
+      <div class="testimonial reveal" style="transition-delay:0.1s">
+        <blockquote>"The cascade mechanics are what got me. I triggered a fertilizer shortage trying to win a currency war. Didn't see it coming — and then I saw it everywhere."</blockquote>
+        <cite>— Finance analyst</cite>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- Final CTA -->
+  <div class="cta-section reveal">
+    <h2>The loop is real. The game makes it visible.</h2>
+    <p>Best on laptop or desktop &nbsp;·&nbsp; No signup required &nbsp;·&nbsp; Free to play</p>
+    <a href="https://crisis-cascade-frontend.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-large">
+      Play the Simulation Now →
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>
+      Crisis Cascade: Hormuz 2026 is an educational simulation built to make complex systems thinking accessible through play.
+      The world is running a very old script on new hardware. The better you understand the script, the more clearly you can see your options — while you still have them.
+    </p>
+    <p class="footer-bottom">© 2026 Crisis Cascade &nbsp;·&nbsp; Educational Use</p>
+  </footer>
+
+  <script>
+    // ── Shared lambda state ──
+    const lambdaBg = document.getElementById('lambda-bg');
+    let lambda = 1.00;
+    const LAMBDA_MAX = 3.2;
+
+    function lambdaColor(v) {
+      if (v >= 2.5) return '#ef4444';
+      if (v >= 2.0) return '#f97316';
+      if (v >= 1.5) return '#facc15';
+      return '#10b981';
+    }
+
+    setInterval(() => {
+      lambda += 0.006;
+      if (lambda > LAMBDA_MAX) lambda = 1.00;
+      const c = lambdaColor(lambda);
+      lambdaBg.style.color = c;
+      lambdaBg.textContent = 'λ ' + lambda.toFixed(2);
+      // Sync λ stat chip
+      const lEl = document.getElementById('stat-lambda');
+      if (lEl) { lEl.textContent = lambda.toFixed(2); lEl.style.color = c; }
+    }, 80);
+
+    // ── Hero stats bar ──
+    let oil = 118, panic = 34;
+    const OIL_MAX = 164, PANIC_MAX = 81;
+
+    setInterval(() => {
+      oil += 0.14; if (oil > OIL_MAX) oil = 118;
+      panic += 0.09; if (panic > PANIC_MAX) panic = 34;
+
+      const oEl = document.getElementById('stat-oil');
+      const pEl = document.getElementById('stat-panic');
+      if (oEl) {
+        oEl.textContent = '$' + Math.round(oil) + '/bbl';
+        oEl.style.color = oil > 148 ? '#ef4444' : oil > 135 ? '#f97316' : '#f59e0b';
+      }
+      if (pEl) {
+        pEl.textContent = Math.round(panic);
+        pEl.style.color = panic > 65 ? '#ef4444' : panic > 45 ? '#f97316' : '#10b981';
+      }
+    }, 120);
+
+    // ── Tension bar (scroll-driven) ──
+    const tensionBar = document.getElementById('tension-bar');
+    const tensionLabel = document.getElementById('tension-label');
+    const TENSION_TIERS = [
+      { pct: 0,  color: '#10b981', label: 'STABLE' },
+      { pct: 25, color: '#facc15', label: 'ELEVATED' },
+      { pct: 50, color: '#f97316', label: 'CRITICAL' },
+      { pct: 75, color: '#ef4444', label: 'EXTREME' },
+    ];
+    let lastTier = 0;
+
+    window.addEventListener('scroll', () => {
+      const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+      tensionBar.style.width = pct + '%';
+
+      let tier = 0;
+      for (let i = TENSION_TIERS.length - 1; i >= 0; i--) {
+        if (pct >= TENSION_TIERS[i].pct) { tier = i; break; }
+      }
+      tensionBar.style.background = TENSION_TIERS[tier].color;
+      tensionLabel.textContent = TENSION_TIERS[tier].label;
+      tensionLabel.style.color = TENSION_TIERS[tier].color;
+      tensionLabel.style.opacity = pct > 3 ? '1' : '0';
+    }, { passive: true });
+
+    // ── Scroll reveal ──
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // ── Loop SVG node highlight sequence ──
+    const LOOP_NODES = [
+      { rect: 'ln0', color: '#f87171' },
+      { rect: 'ln1', color: '#f97316' },
+      { rect: 'ln2', color: '#facc15' },
+      { rect: 'ln3', color: '#f87171' },
+    ];
+    const BASE_STROKES = ['#f87171', '#f97316', '#facc15', '#f87171'];
+    let loopIdx = 0;
+
+    setInterval(() => {
+      // Reset all
+      LOOP_NODES.forEach((n, i) => {
+        const r = document.getElementById(n.rect);
+        if (r) { r.setAttribute('stroke', BASE_STROKES[i]); r.setAttribute('stroke-width', '1.5'); }
+      });
+      // Highlight active
+      const active = LOOP_NODES[loopIdx];
+      const rect = document.getElementById(active.rect);
+      if (rect) {
+        rect.setAttribute('stroke', active.color);
+        rect.setAttribute('stroke-width', '3');
+        rect.setAttribute('filter', 'drop-shadow(0 0 6px ' + active.color + '80)');
+        setTimeout(() => { if (rect) rect.removeAttribute('filter'); }, 600);
+      }
+      loopIdx = (loopIdx + 1) % LOOP_NODES.length;
+    }, 1800);
+  </script>
+
+</body>
+</html>
