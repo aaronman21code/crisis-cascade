@@ -124,6 +124,18 @@ export default function App() {
           >
             {connected ? 'Enter the Simulation' : 'Connecting...'}
           </button>
+
+          <p className="text-center mt-5 text-xs text-gray-600">
+            New here?{' '}
+            <a
+              href="https://crisis-cascade.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white underline transition"
+            >
+              Read about the simulation →
+            </a>
+          </p>
         </div>
       </div>
     );
@@ -158,14 +170,26 @@ export default function App() {
 
   // ── Game ──
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      <AnimatePresence mode="wait">
-        {phase === 'analysis' ? (
-          <LoopAnalysis key="analysis" />
-        ) : (
-          <Dashboard key="game" />
-        )}
-      </AnimatePresence>
+    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
+      <div className="flex-1">
+        <AnimatePresence mode="wait">
+          {phase === 'analysis' ? (
+            <LoopAnalysis key="analysis" />
+          ) : (
+            <Dashboard key="game" />
+          )}
+        </AnimatePresence>
+      </div>
+      <div className="text-center py-2 border-t border-[#1a1a1a]">
+        <a
+          href="https://crisis-cascade.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] font-mono text-gray-700 hover:text-gray-400 transition tracking-wide"
+        >
+          crisis-cascade.vercel.app — read more →
+        </a>
+      </div>
     </div>
   );
 }
