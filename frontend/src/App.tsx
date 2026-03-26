@@ -136,6 +136,9 @@ export default function App() {
               Read about the simulation →
             </a>
           </p>
+          <p className="text-center mt-3 text-[10px] text-gray-700 leading-relaxed max-w-sm mx-auto">
+            Educational simulation. Models real geopolitical mechanisms through game theory to visualize how cascading crises unfold — not a forecast or political statement.
+          </p>
         </div>
       </div>
     );
