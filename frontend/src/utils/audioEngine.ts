@@ -143,7 +143,7 @@ class AudioEngine {
 
     // Drone: on at tension+
     if (this.droneGain) {
-      const target = (tier === 'calm') ? 0 : 0.18;
+      const target = (tier === 'calm') ? 0 : 0.14;
       this.droneGain.gain.cancelScheduledValues(now);
       this.droneGain.gain.linearRampToValueAtTime(target, now + RAMP);
     }
@@ -172,13 +172,30 @@ class AudioEngine {
     // Drone GainNode (starts silent, fades in when λ ≥ 1.5)
     this.droneGain = ctx.createGain();
     this.droneGain.gain.value = 0;
-    this.droneGain.connect(this.masterGain!);
 
-    // Two detuned sawtooth oscillators for beating drone
-    const freqs = [55, 57];
+    // Lowpass filter to cut harshness — only sub/low presence passes through
+    const droneLPF = ctx.createBiquadFilter();
+    droneLPF.type = 'lowpass';
+    droneLPF.frequency.value = 160;
+    droneLPF.Q.value = 0.7;
+    this.droneGain.connect(droneLPF);
+    droneLPF.connect(this.masterGain!);
+
+    // Slow gain LFO for barely-perceptible breathing (0.04Hz = 25s cycle)
+    const breathLFO = ctx.createOscillator();
+    breathLFO.type = 'sine';
+    breathLFO.frequency.value = 0.04;
+    const breathDepth = ctx.createGain();
+    breathDepth.gain.value = 0.025;
+    breathLFO.connect(breathDepth);
+    breathDepth.connect(this.droneGain.gain);
+    breathLFO.start();
+
+    // 4 sine oscillators at spread frequencies — complex beating, never repeats
+    const freqs = [36, 41, 55, 61];
     this.droneOscs = freqs.map(freq => {
       const osc = ctx.createOscillator();
-      osc.type = 'sawtooth';
+      osc.type = 'sine';
       osc.frequency.value = freq;
       osc.connect(this.droneGain!);
       osc.start();
@@ -241,16 +258,25 @@ class AudioEngine {
 
   private _fireTick(ctx: AudioContext): void {
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
+    // Band-passed noise burst — physical mechanical click feel, not a tone
+    const bufSize = Math.floor(ctx.sampleRate * 0.02);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 140;
+    filter.Q.value = 2;
     const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = 900;
-    gain.gain.setValueAtTime(0.07, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
-    osc.connect(gain);
+    gain.gain.setValueAtTime(0.025, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+    src.connect(filter);
+    filter.connect(gain);
     gain.connect(this.masterGain!);
-    osc.start(now);
-    osc.stop(now + 0.03);
+    src.start(now);
+    src.stop(now + 0.022);
   }
 
   // ── Internal: Reverb ─────────────────────────────────────────────────────
@@ -279,8 +305,8 @@ class AudioEngine {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.value = 1200;
-    gain.gain.setValueAtTime(0.15, now);
+    osc.frequency.value = 380;
+    gain.gain.setValueAtTime(0.08, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     osc.connect(gain);
     gain.connect(this.masterGain!);
@@ -295,9 +321,9 @@ class AudioEngine {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(200, now);
-    osc.frequency.linearRampToValueAtTime(320, now + 0.25);
-    gain.gain.setValueAtTime(0.1, now);
+    osc.frequency.setValueAtTime(90, now);
+    osc.frequency.linearRampToValueAtTime(140, now + 0.25);
+    gain.gain.setValueAtTime(0.055, now);
     gain.gain.linearRampToValueAtTime(0.001, now + 0.4);
     osc.connect(gain);
     gain.connect(this.masterGain!);
@@ -316,7 +342,7 @@ class AudioEngine {
     subOsc.type = 'sine';
     subOsc.frequency.setValueAtTime(80, now);
     subOsc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-    subGain.gain.setValueAtTime(0.35, now);
+    subGain.gain.setValueAtTime(0.22, now);
     subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
     subOsc.connect(subGain);
     subGain.connect(this.masterGain!);
@@ -334,7 +360,7 @@ class AudioEngine {
 
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.value = 800;
+    filter.frequency.value = 220;
     filter.Q.value = 1.5;
 
     const noiseGain = ctx.createGain();
@@ -359,9 +385,9 @@ class AudioEngine {
     freqs.forEach(freq => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sawtooth';
+      osc.type = 'sine';
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.setValueAtTime(0.13, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
       osc.connect(gain);
       gain.connect(reverb);
