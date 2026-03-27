@@ -1,12 +1,7 @@
 // frontend/src/utils/audioEngine.ts
-// Cinematic war-room audio engine v4 — Web Audio API, no files, no dependencies.
-// Hans Zimmer war/drama architecture:
-//   - War drums (front, prominent, reverberant)
-//   - Brass pulse (fires with every BOOM — low detuned sawtooth chord)
-//   - Cello tremolo section (fast-amplitude bowed strings texture, always present)
-//   - Noise floor (room presence)
-//   - Shepard tone (subliminal — barely audible, psychological only)
-//   - Metallic ghost (chaos layer)
+// Cinematic audio engine v5 — Sicario "The Beast" architecture.
+// Slow heartbeat pulse, massive sub-bass, choir-like swells, industrial dread.
+// Reference: Jóhann Jóhannsson — The Beast (Sicario OST)
 
 const STORAGE_KEY = 'cc_muted';
 
@@ -27,8 +22,8 @@ function getTickInterval(tier: LambdaTier): number {
 
 function shepardGain(freqHz: number): number {
   const logF = Math.log2(freqHz);
-  const center = Math.log2(80);
-  const sigma = 1.8;
+  const center = Math.log2(60);
+  const sigma = 1.6;
   return Math.exp(-0.5 * Math.pow((logF - center) / sigma, 2));
 }
 
@@ -39,41 +34,37 @@ class AudioEngine {
   private musicRunning = false;
   private currentTier: LambdaTier = 'calm';
 
-  // Shepard (subliminal only)
+  // Shepard (truly subliminal — presence only)
   private shepardOscs: OscillatorNode[] = [];
   private shepardGains: GainNode[] = [];
-  private shepardChorusOscs: OscillatorNode[] = [];
-  private shepardChorusGains: GainNode[] = [];
   private shepardGainNode: GainNode | null = null;
   private shepardPhase = 0;
   private shepardTimer: ReturnType<typeof setInterval> | null = null;
 
-  // Noise floor
-  private noiseGain: GainNode | null = null;
+  // Sub rumble (always on — room floor)
+  private rumbleGain: GainNode | null = null;
 
-  // Cello tremolo section (always on, low volume at calm, builds with λ)
-  private celloGain: GainNode | null = null;
-  private celloOscs: OscillatorNode[] = [];
-  private celloTremoloLFO: OscillatorNode | null = null;
+  // Choir swell pad (always on, swells with λ)
+  private choirGain: GainNode | null = null;
+  private choirOscs: OscillatorNode[] = [];
 
-  // War drums (λ ≥ 1.5)
-  private drumGain: GainNode | null = null;
-  private drumReverb: ConvolverNode | null = null;
-  private drumCycleTimeout: ReturnType<typeof setTimeout> | null = null;
-  private drumActive = false;
+  // Heartbeat pulse (λ ≥ 1.5)
+  private heartbeatGain: GainNode | null = null;
+  private heartbeatActive = false;
+  private heartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // Brass pulse (fires with BOOM)
+  // Dark brass swell (fires with heartbeat at λ ≥ 1.5)
   private brassGain: GainNode | null = null;
 
-  // Tension pad (λ ≥ 2.0)
+  // Deep tension layer (λ ≥ 2.0)
   private padGain: GainNode | null = null;
   private padOscs: OscillatorNode[] = [];
 
-  // Ghost (λ ≥ 2.5)
-  private ghostTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Ghost resonance (λ ≥ 2.5)
   private ghostActive = false;
+  private ghostTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // Tick
+  // Tick (barely audible)
   private tickInterval: ReturnType<typeof setInterval> | null = null;
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -83,9 +74,7 @@ class AudioEngine {
     this.ctx = new AudioContext();
     this.masterGain = this.ctx.createGain();
     this.masterGain.connect(this.ctx.destination);
-    try {
-      this.muted = localStorage.getItem(STORAGE_KEY) === 'true';
-    } catch { this.muted = false; }
+    try { this.muted = localStorage.getItem(STORAGE_KEY) === 'true'; } catch { this.muted = false; }
     this.masterGain.gain.value = this.muted ? 0 : 1;
   }
 
@@ -94,8 +83,6 @@ class AudioEngine {
     if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
     return this.ctx;
   }
-
-  // ── Mute ─────────────────────────────────────────────────────────────────
 
   setMuted(muted: boolean): void {
     this.muted = muted;
@@ -122,30 +109,27 @@ class AudioEngine {
 
   stopMusic(): void {
     this.musicRunning = false;
-    this.drumActive = false;
+    this.heartbeatActive = false;
     this.ghostActive = false;
 
     if (this.shepardTimer !== null) { clearInterval(this.shepardTimer); this.shepardTimer = null; }
     if (this.tickInterval !== null) { clearInterval(this.tickInterval); this.tickInterval = null; }
-    if (this.drumCycleTimeout !== null) { clearTimeout(this.drumCycleTimeout); this.drumCycleTimeout = null; }
+    if (this.heartbeatTimeout !== null) { clearTimeout(this.heartbeatTimeout); this.heartbeatTimeout = null; }
     if (this.ghostTimeout !== null) { clearTimeout(this.ghostTimeout); this.ghostTimeout = null; }
 
     if (this.ctx) {
       const now = this.ctx.currentTime;
-      [this.shepardGainNode, this.noiseGain, this.celloGain, this.drumGain, this.brassGain, this.padGain]
-        .forEach(g => {
-          if (g) { g.gain.cancelScheduledValues(now); g.gain.linearRampToValueAtTime(0, now + 1.0); }
-        });
+      [this.shepardGainNode, this.rumbleGain, this.choirGain, this.heartbeatGain,
+       this.brassGain, this.padGain].forEach(g => {
+        if (g) { g.gain.cancelScheduledValues(now); g.gain.linearRampToValueAtTime(0, now + 1.5); }
+      });
       setTimeout(() => {
-        [...this.shepardOscs, ...this.shepardChorusOscs, ...this.celloOscs, ...this.padOscs,
-         this.celloTremoloLFO].forEach(o => {
+        [...this.shepardOscs, ...this.choirOscs, ...this.padOscs].forEach(o => {
           if (o) { try { o.stop(); } catch {} }
         });
         this.shepardOscs = []; this.shepardGains = [];
-        this.shepardChorusOscs = []; this.shepardChorusGains = [];
-        this.celloOscs = []; this.padOscs = [];
-        this.celloTremoloLFO = null;
-      }, 1100);
+        this.choirOscs = []; this.padOscs = [];
+      }, 1600);
     }
   }
 
@@ -159,38 +143,38 @@ class AudioEngine {
     this.currentTier = tier;
 
     const now = ctx.currentTime;
-    const RAMP = 3.0;
+    const RAMP = 4.0; // slow, cinematic
 
-    // Cello: always on but gets louder with tension
-    if (this.celloGain) {
-      const targets: Record<LambdaTier, number> = { calm: 0.03, tension: 0.055, crisis: 0.075, chaos: 0.09 };
-      this.celloGain.gain.cancelScheduledValues(now);
-      this.celloGain.gain.linearRampToValueAtTime(targets[tier], now + RAMP);
+    // Choir: present at all times, swells with tension
+    if (this.choirGain) {
+      const targets: Record<LambdaTier, number> = { calm: 0.025, tension: 0.055, crisis: 0.08, chaos: 0.1 };
+      this.choirGain.gain.cancelScheduledValues(now);
+      this.choirGain.gain.linearRampToValueAtTime(targets[tier], now + RAMP);
     }
 
-    // Drums: on at tension+
-    if (this.drumGain) {
+    // Heartbeat: on at tension+
+    if (this.heartbeatGain) {
       const target = tier === 'calm' ? 0 : 1;
-      this.drumGain.gain.cancelScheduledValues(now);
-      this.drumGain.gain.linearRampToValueAtTime(target, now + RAMP);
-      if (tier !== 'calm' && !this.drumActive) {
-        this.drumActive = true;
-        this._scheduleDrumCycle(ctx);
+      this.heartbeatGain.gain.cancelScheduledValues(now);
+      this.heartbeatGain.gain.linearRampToValueAtTime(target, now + RAMP);
+      if (tier !== 'calm' && !this.heartbeatActive) {
+        this.heartbeatActive = true;
+        this._scheduleHeartbeat(ctx);
       } else if (tier === 'calm') {
-        this.drumActive = false;
+        this.heartbeatActive = false;
       }
     }
 
-    // Tension pad: on at crisis+
+    // Deep pad: on at crisis+
     if (this.padGain) {
-      const target = (tier === 'crisis' || tier === 'chaos') ? 0.06 : 0;
+      const target = (tier === 'crisis' || tier === 'chaos') ? 0.065 : 0;
       this.padGain.gain.cancelScheduledValues(now);
       this.padGain.gain.linearRampToValueAtTime(target, now + RAMP);
     }
 
-    // Shepard: stays subliminal always
+    // Shepard: stays subliminal
     if (this.shepardGainNode) {
-      const target = tier === 'chaos' ? 0.006 : 0.004;
+      const target = tier === 'chaos' ? 0.006 : 0.003;
       this.shepardGainNode.gain.cancelScheduledValues(now);
       this.shepardGainNode.gain.linearRampToValueAtTime(target, now + RAMP);
     }
@@ -211,41 +195,29 @@ class AudioEngine {
 
   private _buildLayers(ctx: AudioContext): void {
 
-    // ── Shepard (subliminal — 0.004 gain, buried in reverb) ──
+    // ── Shepard (subliminal, 0.003 gain, heavy reverb) ──
     this.shepardGainNode = ctx.createGain();
-    this.shepardGainNode.gain.value = 0.004;
-    const shepardReverb = this._makeReverb(ctx, 3.0);
-    const shepardLPF = ctx.createBiquadFilter();
-    shepardLPF.type = 'lowpass';
-    shepardLPF.frequency.value = 300;
-    shepardReverb.connect(shepardLPF);
-    shepardLPF.connect(this.shepardGainNode);
+    this.shepardGainNode.gain.value = 0.003;
+    const shepReverb = this._makeReverb(ctx, 4.0);
+    const shepLPF = ctx.createBiquadFilter();
+    shepLPF.type = 'lowpass'; shepLPF.frequency.value = 250;
+    shepReverb.connect(shepLPF); shepLPF.connect(this.shepardGainNode);
     this.shepardGainNode.connect(this.masterGain!);
 
-    const BASE_FREQS = [40, 80, 160, 320, 640];
+    const BASE_FREQS = [35, 70, 140, 280, 560];
     this.shepardPhase = 0;
     BASE_FREQS.forEach((baseFreq, i) => {
       const phaseOffset = i / BASE_FREQS.length;
       const initFreq = baseFreq * Math.pow(2, phaseOffset);
-
       const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = initFreq;
+      osc.type = 'sine'; osc.frequency.value = initFreq;
       const gain = ctx.createGain();
       gain.gain.value = shepardGain(initFreq);
-      osc.connect(gain); gain.connect(shepardReverb); osc.start();
+      osc.connect(gain); gain.connect(shepReverb); osc.start();
       this.shepardOscs.push(osc); this.shepardGains.push(gain);
-
-      const chorus = ctx.createOscillator();
-      chorus.type = 'sine';
-      chorus.frequency.value = initFreq * 1.005;
-      const cg = ctx.createGain();
-      cg.gain.value = shepardGain(initFreq) * 0.4;
-      chorus.connect(cg); cg.connect(shepardReverb); chorus.start();
-      this.shepardChorusOscs.push(chorus); this.shepardChorusGains.push(cg);
     });
 
-    const PERIOD_MS = 45000;
+    const PERIOD_MS = 60000; // slower — 60s octave cycle
     let lastTime = performance.now();
     this.shepardTimer = setInterval(() => {
       if (!this.musicRunning) return;
@@ -259,192 +231,169 @@ class AudioEngine {
         const g = shepardGain(freq);
         if (this.shepardOscs[i]) this.shepardOscs[i].frequency.value = freq;
         if (this.shepardGains[i]) this.shepardGains[i].gain.value = g;
-        if (this.shepardChorusOscs[i]) this.shepardChorusOscs[i].frequency.value = freq * 1.005;
-        if (this.shepardChorusGains[i]) this.shepardChorusGains[i].gain.value = g * 0.4;
       });
-    }, 80);
+    }, 120);
 
-    // ── Noise floor (always on — room presence) ──
-    this.noiseGain = ctx.createGain();
-    this.noiseGain.gain.value = 0.015;
-    const noiseLPF = ctx.createBiquadFilter();
-    noiseLPF.type = 'lowpass';
-    noiseLPF.frequency.value = 110;
-    this.noiseGain.connect(noiseLPF);
-    noiseLPF.connect(this.masterGain!);
+    // ── Sub rumble (always on — floor presence) ──
+    this.rumbleGain = ctx.createGain();
+    this.rumbleGain.gain.value = 0.014;
+    const rumbleLPF = ctx.createBiquadFilter();
+    rumbleLPF.type = 'lowpass'; rumbleLPF.frequency.value = 80;
+    this.rumbleGain.connect(rumbleLPF); rumbleLPF.connect(this.masterGain!);
 
-    const noiseLen = Math.floor(ctx.sampleRate * 4);
-    const noiseBuf = ctx.createBuffer(1, noiseLen, ctx.sampleRate);
-    const nd = noiseBuf.getChannelData(0);
-    let lastVal = 0;
-    for (let i = 0; i < noiseLen; i++) {
-      const white = Math.random() * 2 - 1;
-      lastVal = (lastVal + 0.02 * white) / 1.02;
-      nd[i] = lastVal * 3.5;
+    const rLen = Math.floor(ctx.sampleRate * 6);
+    const rBuf = ctx.createBuffer(1, rLen, ctx.sampleRate);
+    const rd = rBuf.getChannelData(0);
+    let rv = 0;
+    for (let i = 0; i < rLen; i++) {
+      rv = (rv + 0.015 * (Math.random() * 2 - 1)) / 1.015;
+      rd[i] = rv * 4;
     }
-    const noiseLoop = ctx.createBufferSource();
-    noiseLoop.buffer = noiseBuf;
-    noiseLoop.loop = true;
-    noiseLoop.connect(this.noiseGain);
-    noiseLoop.start();
+    const rLoop = ctx.createBufferSource();
+    rLoop.buffer = rBuf; rLoop.loop = true;
+    rLoop.connect(this.rumbleGain); rLoop.start();
 
-    // ── Cello tremolo section (always on, builds with λ) ──
-    // 9Hz tremolo LFO simulates bowing — the signature Hans Zimmer string texture
-    this.celloGain = ctx.createGain();
-    this.celloGain.gain.value = 0.03; // starts quiet at calm
+    // ── Choir swell (always on, builds with λ) ──
+    // Multiple detuned sine oscillators with very slow attack character.
+    // Simulates the choir-like quality of Sicario's string/brass ensemble.
+    this.choirGain = ctx.createGain();
+    this.choirGain.gain.value = 0.025; // starts quiet at calm
 
-    const celloReverb = this._makeReverb(ctx, 2.0);
-    const celloLPF = ctx.createBiquadFilter();
-    celloLPF.type = 'lowpass';
-    celloLPF.frequency.value = 500;
-    this.celloGain.connect(celloReverb);
-    celloReverb.connect(celloLPF);
-    celloLPF.connect(this.masterGain!);
+    const choirReverb = this._makeReverb(ctx, 5.0); // long hall reverb
+    const choirLPF = ctx.createBiquadFilter();
+    choirLPF.type = 'lowpass'; choirLPF.frequency.value = 350;
+    this.choirGain.connect(choirReverb);
+    choirReverb.connect(choirLPF);
+    choirLPF.connect(this.masterGain!);
 
-    // Tremolo LFO — modulates the gain of the cello bus
-    this.celloTremoloLFO = ctx.createOscillator();
-    this.celloTremoloLFO.type = 'sine';
-    this.celloTremoloLFO.frequency.value = 9; // cello tremolo rate
-    const tremoloDepth = ctx.createGain();
-    tremoloDepth.gain.value = 0.6; // deep tremolo for dramatic effect
-    this.celloTremoloLFO.connect(tremoloDepth);
-    tremoloDepth.connect(this.celloGain.gain);
-    this.celloTremoloLFO.start();
-
-    // 4 detuned sine oscillators in cello register (65–130Hz)
-    // Two clusters for a richer sound
-    const celloFreqs = [65, 69, 97, 103]; // slight detuning within pairs
-    this.celloOscs = celloFreqs.map(freq => {
+    // 8 oscillators spread across two octave-spaced groups, all slightly detuned
+    // Creates that dense, warm cluster of voices
+    const choirFreqs = [
+      // Lower group (cello/bass register)
+      62, 65, 68, 73,
+      // Upper group (viola register) — exactly one octave up + slight detuning
+      124, 129, 136, 146,
+    ];
+    this.choirOscs = choirFreqs.map(freq => {
       const osc = ctx.createOscillator();
-      osc.type = 'triangle'; // triangle is warmer than sine, less organ-like
+      osc.type = 'triangle'; // warmer than sine, not buzzy
       osc.frequency.value = freq;
-      osc.connect(this.celloGain!);
+      osc.connect(this.choirGain!);
       osc.start();
       return osc;
     });
 
-    // ── War drum bus (fades in at λ ≥ 1.5) ──
-    // Drums are prominent — run through a large room reverb
-    this.drumGain = ctx.createGain();
-    this.drumGain.gain.value = 0;
-    this.drumReverb = this._makeReverb(ctx, 1.8);
-    this.drumGain.connect(this.drumReverb);
-    this.drumReverb.connect(this.masterGain!);
-    // Also connect dry signal (reverb + dry mix for punch)
-    this.drumGain.connect(this.masterGain!);
+    // Very slow breath on choir (0.03Hz = 33s cycle)
+    const choirBreath = ctx.createOscillator();
+    choirBreath.type = 'sine';
+    choirBreath.frequency.value = 0.03;
+    const breathDepth = ctx.createGain();
+    breathDepth.gain.value = 0.008;
+    choirBreath.connect(breathDepth);
+    breathDepth.connect(this.choirGain.gain);
+    choirBreath.start();
 
-    // ── Brass pulse bus ──
+    // ── Heartbeat bus (fades in at λ ≥ 1.5) ──
+    // Large room reverb — the heartbeat reverberates through a massive space
+    this.heartbeatGain = ctx.createGain();
+    this.heartbeatGain.gain.value = 0;
+    const hbReverb = this._makeReverb(ctx, 2.5);
+    this.heartbeatGain.connect(hbReverb);
+    hbReverb.connect(this.masterGain!);
+    // Also dry signal for punch
+    this.heartbeatGain.connect(this.masterGain!);
+
+    // ── Brass swell bus (fires with heartbeat) ──
     this.brassGain = ctx.createGain();
-    this.brassGain.gain.value = 1; // always active — controlled per-hit
-    const brassReverb = this._makeReverb(ctx, 2.5);
+    this.brassGain.gain.value = 1;
+    const brassReverb = this._makeReverb(ctx, 3.5);
+    const brassLPF = ctx.createBiquadFilter();
+    brassLPF.type = 'lowpass'; brassLPF.frequency.value = 300;
     this.brassGain.connect(brassReverb);
-    brassReverb.connect(this.masterGain!);
+    brassReverb.connect(brassLPF);
+    brassLPF.connect(this.masterGain!);
 
-    // ── Tension pad (λ ≥ 2.0) ──
+    // ── Deep pad (λ ≥ 2.0) ──
     this.padGain = ctx.createGain();
     this.padGain.gain.value = 0;
-    const padReverb = this._makeReverb(ctx, 4.0);
-    this.padGain.connect(padReverb);
-    padReverb.connect(this.masterGain!);
-    const padFreqs = [58, 77, 103, 56, 75, 101];
-    this.padOscs = padFreqs.map(freq => {
+    const padReverb = this._makeReverb(ctx, 5.0);
+    this.padGain.connect(padReverb); padReverb.connect(this.masterGain!);
+    // Very deep minor cluster
+    [44, 52, 58, 69, 77].forEach(freq => {
       const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      osc.connect(this.padGain!);
-      osc.start();
-      return osc;
+      osc.type = 'sine'; osc.frequency.value = freq;
+      osc.connect(this.padGain!); osc.start();
+      this.padOscs.push(osc);
     });
   }
 
-  // ── War drum pattern ──────────────────────────────────────────────────────
-  // BOOM@0ms, tok@800, BOOM@1400, tok@1800, tok@2100 — cycle 3200ms
+  // ── Heartbeat pattern ─────────────────────────────────────────────────────
+  // lub-DUB heartbeat: heavy BOOM at 0ms, lighter boom at 220ms
+  // Cycle: ~1600ms (~38 BPM) — slow, oppressive
 
-  private _scheduleDrumCycle(ctx: AudioContext): void {
-    if (!this.drumActive || !this.musicRunning) return;
+  private _scheduleHeartbeat(ctx: AudioContext): void {
+    if (!this.heartbeatActive || !this.musicRunning) return;
 
-    const hits: Array<{ time: number; type: 'boom' | 'tok' }> = [
-      { time: 0,    type: 'boom' },
-      { time: 800,  type: 'tok'  },
-      { time: 1400, type: 'boom' },
-      { time: 1800, type: 'tok'  },
-      { time: 2100, type: 'tok'  },
-    ];
+    // lub (heavy)
+    this._fireLub(ctx);
+    // DUB (softer, 220ms later)
+    setTimeout(() => {
+      if (!this.heartbeatActive || !this.ctx) return;
+      this._fireDub(this.ctx);
+      // Brass swell with every lub-DUB
+      this._fireBrassSwell(this.ctx);
+    }, 220);
 
-    hits.forEach(({ time, type }) => {
-      setTimeout(() => {
-        if (!this.drumActive || !this.ctx) return;
-        if (type === 'boom') {
-          this._fireBoom(this.ctx);
-          this._fireBrass(this.ctx); // Zimmer brass pulse on every BOOM
-        } else {
-          this._fireTok(this.ctx);
-        }
-      }, time);
-    });
-
-    this.drumCycleTimeout = setTimeout(() => this._scheduleDrumCycle(ctx), 3200);
+    this.heartbeatTimeout = setTimeout(() => this._scheduleHeartbeat(ctx), 1600);
   }
 
-  private _fireBoom(ctx: AudioContext): void {
+  // Heavy lub: sub-bass sine, pitch drop, massive attack
+  private _fireLub(ctx: AudioContext): void {
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    // Pitch drop: 55Hz → 28Hz — big chest punch
-    osc.frequency.setValueAtTime(55, now);
-    osc.frequency.exponentialRampToValueAtTime(28, now + 0.45);
+    osc.frequency.setValueAtTime(48, now);
+    osc.frequency.exponentialRampToValueAtTime(24, now + 0.5);
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.42, now + 0.007); // fast attack
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-    osc.connect(gain);
-    gain.connect(this.drumGain!);
-    osc.start(now);
-    osc.stop(now + 0.65);
+    gain.gain.linearRampToValueAtTime(0.45, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+    osc.connect(gain); gain.connect(this.heartbeatGain!);
+    osc.start(now); osc.stop(now + 0.7);
   }
 
-  private _fireTok(ctx: AudioContext): void {
+  // Softer dub: same shape but quieter and slightly higher
+  private _fireDub(ctx: AudioContext): void {
     const now = ctx.currentTime;
-    const bufSize = Math.floor(ctx.sampleRate * 0.08);
-    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 190;
-    filter.Q.value = 3;
+    const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.09, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
-    src.connect(filter); filter.connect(gain);
-    gain.connect(this.drumGain!);
-    src.start(now); src.stop(now + 0.085);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(38, now);
+    osc.frequency.exponentialRampToValueAtTime(20, now + 0.4);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.28, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    osc.connect(gain); gain.connect(this.heartbeatGain!);
+    osc.start(now); osc.stop(now + 0.55);
   }
 
-  // Zimmer brass stab — detuned sawtooth chord at low brass register
-  // Fires in sync with every BOOM for that "war movie" impact
-  private _fireBrass(ctx: AudioContext): void {
-    if (!this.drumActive) return; // only when drums are active
+  // Slow low brass swell — trombone cluster, very slow attack, 2.5s decay
+  private _fireBrassSwell(ctx: AudioContext): void {
+    if (!this.heartbeatActive) return;
     const now = ctx.currentTime;
-    // Low brass chord: trombone-ish cluster around 58Hz (Bb1) and 73Hz (D2)
-    const brFreqs = [55, 58, 73, 77];
+    // Minor cluster: root, flat 3rd, 5th — dark, heavy
+    const brFreqs = [44, 52, 66, 88];
     brFreqs.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
-      // Slight pitch envelope: sharp attack, tiny drop for "brassiness"
-      osc.frequency.setValueAtTime(freq * 1.02, now);
-      osc.frequency.linearRampToValueAtTime(freq, now + 0.06);
+      osc.frequency.value = freq;
       const gain = ctx.createGain();
-      const baseGain = i < 2 ? 0.07 : 0.05; // root notes louder
+      const pk = i === 0 ? 0.065 : 0.045;
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(baseGain, now + 0.025);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
-      osc.connect(gain);
-      gain.connect(this.brassGain!);
-      osc.start(now);
-      osc.stop(now + 1.45);
+      gain.gain.linearRampToValueAtTime(pk, now + 0.18); // slow brass attack
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+      osc.connect(gain); gain.connect(this.brassGain!);
+      osc.start(now); osc.stop(now + 2.6);
     });
   }
 
@@ -454,30 +403,24 @@ class AudioEngine {
     if (!this.ghostActive) return;
     this.ghostTimeout = setTimeout(() => {
       if (!this.ghostActive || !this.ctx) return;
-      this._fireGhost(ctx);
+      const now = this.ctx.currentTime;
+      const bufSize = Math.floor(this.ctx.sampleRate * 1.5);
+      const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass'; filter.frequency.value = 280; filter.Q.value = 10;
+      const reverb = this._makeReverb(this.ctx, 2.0);
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+      src.connect(filter); filter.connect(reverb);
+      reverb.connect(gain); gain.connect(this.masterGain!);
+      src.start(now); src.stop(now + 1.55);
       this._scheduleGhost(ctx);
-    }, 4000 + Math.random() * 4000);
-  }
-
-  private _fireGhost(ctx: AudioContext): void {
-    const now = ctx.currentTime;
-    const bufSize = Math.floor(ctx.sampleRate * 1.2);
-    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 340;
-    filter.Q.value = 8;
-    const reverb = this._makeReverb(ctx, 1.5);
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.045, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-    src.connect(filter); filter.connect(reverb);
-    reverb.connect(gain); gain.connect(this.masterGain!);
-    src.start(now); src.stop(now + 1.25);
+    }, 5000 + Math.random() * 5000);
   }
 
   // ── Tick ──────────────────────────────────────────────────────────────────
@@ -503,14 +446,11 @@ class AudioEngine {
     const src = ctx.createBufferSource();
     src.buffer = buf;
     const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 140;
-    filter.Q.value = 2;
+    filter.type = 'bandpass'; filter.frequency.value = 120; filter.Q.value = 2;
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.008, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
-    src.connect(filter); filter.connect(gain);
-    gain.connect(this.masterGain!);
+    gain.gain.setValueAtTime(0.007, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+    src.connect(filter); filter.connect(gain); gain.connect(this.masterGain!);
     src.start(now); src.stop(now + 0.022);
   }
 
@@ -538,12 +478,11 @@ class AudioEngine {
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 380;
-    gain.gain.setValueAtTime(0.08, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc.type = 'sine'; osc.frequency.value = 320;
+    gain.gain.setValueAtTime(0.07, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
     osc.connect(gain); gain.connect(this.masterGain!);
-    osc.start(now); osc.stop(now + 0.09);
+    osc.start(now); osc.stop(now + 0.1);
   }
 
   playPhaseTransition(): void {
@@ -553,59 +492,60 @@ class AudioEngine {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(90, now);
-    osc.frequency.linearRampToValueAtTime(140, now + 0.25);
-    gain.gain.setValueAtTime(0.055, now);
-    gain.gain.linearRampToValueAtTime(0.001, now + 0.4);
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.linearRampToValueAtTime(120, now + 0.3);
+    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.linearRampToValueAtTime(0.001, now + 0.5);
     osc.connect(gain); gain.connect(this.masterGain!);
-    osc.start(now); osc.stop(now + 0.42);
+    osc.start(now); osc.stop(now + 0.55);
   }
 
   playCascadeFire(): void {
     const ctx = this.ensureReady();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const subOsc = ctx.createOscillator();
-    const subGain = ctx.createGain();
-    subOsc.type = 'sine';
-    subOsc.frequency.setValueAtTime(80, now);
-    subOsc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-    subGain.gain.setValueAtTime(0.22, now);
-    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-    subOsc.connect(subGain); subGain.connect(this.masterGain!);
-    subOsc.start(now); subOsc.stop(now + 0.55);
 
-    const bufSize = Math.floor(ctx.sampleRate * 0.3);
+    // Deep sub impact
+    const sub = ctx.createOscillator();
+    const subG = ctx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(65, now);
+    sub.frequency.exponentialRampToValueAtTime(30, now + 0.35);
+    subG.gain.setValueAtTime(0.22, now);
+    subG.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    sub.connect(subG); subG.connect(this.masterGain!);
+    sub.start(now); sub.stop(now + 0.6);
+
+    // Low rumble burst
+    const bufSize = Math.floor(ctx.sampleRate * 0.4);
     const nBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
     const d = nBuf.getChannelData(0);
     for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
     const src = ctx.createBufferSource();
     src.buffer = nBuf;
     const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass'; filter.frequency.value = 220; filter.Q.value = 1.5;
-    const nGain = ctx.createGain();
-    nGain.gain.setValueAtTime(0.12, now);
-    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-    src.connect(filter); filter.connect(nGain);
-    nGain.connect(this.masterGain!);
-    src.start(now); src.stop(now + 0.32);
+    filter.type = 'lowpass'; filter.frequency.value = 180;
+    const nG = ctx.createGain();
+    nG.gain.setValueAtTime(0.1, now);
+    nG.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    src.connect(filter); filter.connect(nG); nG.connect(this.masterGain!);
+    src.start(now); src.stop(now + 0.42);
   }
 
   playLambdaThreshold(): void {
     const ctx = this.ensureReady();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const reverb = this._makeReverb(ctx, 1.5);
+    const reverb = this._makeReverb(ctx, 2.5);
     reverb.connect(this.masterGain!);
-    [55, 73, 82].forEach(freq => {
+    [44, 55, 66].forEach(freq => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.13, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
       osc.connect(gain); gain.connect(reverb);
-      osc.start(now); osc.stop(now + 1.45);
+      osc.start(now); osc.stop(now + 1.85);
     });
   }
 }
