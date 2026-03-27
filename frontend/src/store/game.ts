@@ -37,7 +37,6 @@ interface GameStore {
   resolvedActions: Record<string, { actionId: string; actionName: string }>;
   observedWinner: string | null;
   wantsLanding: boolean;
-  skipAnalysisPending: boolean;
 
   // Actions
   connect: (serverUrl: string) => void;
@@ -75,7 +74,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resolvedActions: {},
   observedWinner: null,
   wantsLanding: false,
-  skipAnalysisPending: false,
 
   connect: (serverUrl: string) => {
     if (get().socket?.connected) return;
@@ -102,9 +100,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     socket.on('phase:change', ({ phase }: { phase: Phase }) => {
-      // Don't auto-advance away from analysis — user must explicitly click Continue
-      if (get().phase === 'analysis' && !get().skipAnalysisPending) return;
-      set({ phase, skipAnalysisPending: false });
+      set({ phase });
       audioEngine.playPhaseTransition();
     });
 
@@ -200,10 +196,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   advanceToAnalysis: () => set({ phase: 'analysis' }),
-  skipAnalysis: () => {
-    set({ skipAnalysisPending: true });
-    get().socket?.emit('analysis:next');
-  },
+  skipAnalysis: () => get().socket?.emit('analysis:next'),
   skipToOverreach: () => get().socket?.emit('phase:skip'),
   continueObserving: () => {
     const winner = get().gameState.winner;
