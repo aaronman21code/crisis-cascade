@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { LambdaHero } from '../shared/LambdaHero';
 import { GameHeader } from '../shared/GameHeader';
 import { FACTION_COLORS } from '../shared/FactionIntelPanel';
+import { PhaseHint } from '../shared/PhaseHint';
 import { useGameStore } from '../../store/game';
 import { abstractLambda } from '../../utils/stanceEngine';
 
@@ -69,6 +70,19 @@ export function MShockScreen() {
     >
       <div className="max-w-lg mx-auto">
         <GameHeader />
+
+        <PhaseHint
+          phaseKey="m_shock"
+          text="Media Shock Phase — no actions needed. Headlines drive public fear. The next phase shows how fear cascades through the system."
+        />
+
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">M — SHOCK · MEDIA PHASE</span>
+          </div>
+          <p className="text-[11px] text-gray-600">Headlines are forming. Watch how the narrative shifts before the fear phase begins.</p>
+        </div>
 
         {/* BREAKING label + λ */}
         <div className="flex items-center justify-between mt-4 mb-8">

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GameHeader } from '../shared/GameHeader';
 import { ActionCard } from '../shared/ActionCard';
 import { FactionIntelPanel, FACTION_COLORS } from '../shared/FactionIntelPanel';
+import { PhaseHint } from '../shared/PhaseHint';
 import { useGameStore } from '../../store/game';
 import { getAvailableActions } from '@engine/factionActions';
 import { isCooperationLocked } from '@engine/payoffEngine';
@@ -154,6 +155,19 @@ export function GOverreachScreen() {
           )}
         </AnimatePresence>
 
+        <PhaseHint
+          phaseKey="g_overreach"
+          text="Action Phase — commit your faction's move for this turn. All factions act simultaneously. Every action shifts tension (λ) for everyone."
+        />
+
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: factionColor }}></span>
+            <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">G — OVERREACH · ACTION PHASE</span>
+          </div>
+          <p className="text-[11px] text-gray-600">Commit your faction's action for this turn. Every move is simultaneous — choose knowing others are choosing too.</p>
+        </div>
+
         <div className="mt-4 grid md:grid-cols-[1fr_280px] gap-6 items-start">
 
           {/* LEFT — Actions */}
@@ -161,7 +175,7 @@ export function GOverreachScreen() {
             {/* Resource indicator */}
             {!isDirector && (
               <div className="flex justify-between items-center mb-4">
-                <span className="text-xs text-gray-600 uppercase tracking-widest">Choose your action</span>
+                <span className="text-[10px] text-gray-600 uppercase tracking-wider">Select an action — your choice locks immediately</span>
                 <span
                   className="text-xs font-mono px-3 py-1 rounded-full border"
                   style={{ borderColor: `${factionColor}40`, color: factionColor }}
@@ -256,7 +270,7 @@ export function GOverreachScreen() {
           </div>
 
           {/* RIGHT — Faction Intel */}
-          <div className="md:sticky md:top-6">
+          <div className="md:sticky md:top-6 border-l border-[#12121e] bg-[#06060e] rounded-r-lg pl-2">
             <FactionIntelPanel variant="full" isDirector={isDirector} />
           </div>
 

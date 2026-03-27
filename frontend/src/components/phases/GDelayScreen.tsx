@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GameHeader } from '../shared/GameHeader';
 import { ActionCard } from '../shared/ActionCard';
 import { FactionIntelPanel, FACTION_COLORS } from '../shared/FactionIntelPanel';
+import { PhaseHint } from '../shared/PhaseHint';
 import { useGameStore } from '../../store/game';
 import { getAvailableActions } from '@engine/factionActions';
 import { FactionId } from '@engine/gameTheoryData';
@@ -67,8 +68,12 @@ export function GDelayScreen() {
       >
         <div className="max-w-3xl mx-auto">
           <GameHeader />
-          <div className="text-xs text-gray-600 uppercase tracking-widest mb-6 mt-4">
-            G — DELAY · Intel Phase
+          <div className="mb-5 mt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: factionColor }}></span>
+              <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">G — DELAY · INTEL PHASE</span>
+            </div>
+            <p className="text-[11px] text-gray-600">Review your faction's position and choose one action to lock in before the shock lands.</p>
           </div>
 
           <div className="mb-6 p-4 rounded-xl border border-[#1a1a1a] bg-[#0d0d12]">
@@ -131,8 +136,17 @@ export function GDelayScreen() {
       <div className="max-w-5xl mx-auto">
         <GameHeader />
 
-        <div className="text-xs text-gray-600 uppercase tracking-widest mb-6 mt-4">
-          G — DELAY · Intel Phase
+        <PhaseHint
+          phaseKey="g_delay"
+          text="This is the Intel Phase. Pick one action — your choice locks in immediately and can't be changed. Other players are choosing at the same time."
+        />
+
+        <div className="mb-5 mt-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: factionColor }}></span>
+            <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">G — DELAY · INTEL PHASE</span>
+          </div>
+          <p className="text-[11px] text-gray-600">Review your faction's position and choose one action to lock in before the shock lands.</p>
         </div>
 
         <div className="md:grid md:grid-cols-[1fr_280px] gap-6 items-start">
@@ -144,9 +158,10 @@ export function GDelayScreen() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="rounded-xl border p-5 mb-6"
-              style={{ borderColor: `${factionColor}30`, backgroundColor: `${factionColor}08` }}
+              className="rounded-xl border border-l-[3px] p-5 mb-6"
+              style={{ borderColor: `${factionColor}30`, borderLeftColor: factionColor, backgroundColor: '#0a0a0f' }}
             >
+              <div className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-1">Your Faction · Intel</div>
               <div className="font-bold text-lg mb-1" style={{ color: factionColor }}>
                 {playerFaction}
               </div>
@@ -191,13 +206,14 @@ export function GDelayScreen() {
               ) : (
                 !isDirector && displayActions.length > 0 && (
                   <motion.div key="actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                    <div className="text-xs text-gray-600 uppercase tracking-widest mb-3">Choose your play</div>
+                    <div className="text-[10px] text-gray-600 uppercase tracking-wider mb-3">Select an action — your choice locks immediately</div>
                     <div className="space-y-3">
                       {displayActions.map((action, i) => (
                         <div key={action.id} className="relative">
                           {/* Intel Pick badge on top-scored action */}
                           {i === 0 && (
-                            <span className="absolute -top-2 right-3 z-10 text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#0d1a0d] text-green-500 border border-green-900">
+                            <span className="absolute -top-2 right-3 z-10 flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#0d1a0d] text-green-500 border border-green-900">
+                              <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse inline-block"></span>
                               Intel Pick
                             </span>
                           )}
@@ -222,7 +238,7 @@ export function GDelayScreen() {
           </div>
 
           {/* RIGHT — full faction intel panel */}
-          <div className="md:sticky md:top-6">
+          <div className="md:sticky md:top-6 border-l border-[#12121e] bg-[#06060e] rounded-r-lg pl-2">
             <FactionIntelPanel variant="full" isDirector={isDirector} />
           </div>
 

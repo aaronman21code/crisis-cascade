@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { LambdaHero } from '../shared/LambdaHero';
 import { GameHeader } from '../shared/GameHeader';
 import { FACTION_COLORS } from '../shared/FactionIntelPanel';
+import { PhaseHint } from '../shared/PhaseHint';
 import { useGameStore } from '../../store/game';
 import { abstractLambda } from '../../utils/stanceEngine';
 
@@ -69,6 +70,19 @@ export function PFearScreen() {
     >
       <div className="max-w-lg mx-auto">
         <GameHeader />
+
+        <PhaseHint
+          phaseKey="p_fear"
+          text="Panic Phase — no actions needed. Watch which cascades are triggering. The Action Phase follows immediately after."
+        />
+
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+            <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">P — FEAR · PANIC PHASE</span>
+          </div>
+          <p className="text-[11px] text-gray-600">Public panic is rising. Cascades shown here are already in motion — no actions this phase.</p>
+        </div>
 
         {/* λ hero */}
         <div className="flex flex-col items-center justify-center py-10">

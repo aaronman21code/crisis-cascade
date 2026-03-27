@@ -29,7 +29,7 @@ export function ActionCard({
       whileTap={canAfford ? { scale: 0.98 } : {}}
       disabled={!canAfford}
       onClick={onClick}
-      className="w-full text-left rounded-xl border p-5 transition-colors"
+      className="group w-full text-left rounded-xl border p-5 transition-colors duration-150"
       style={{
         backgroundColor: isSelected ? `${factionColor}15` : '#0d0d12',
         borderColor: isSelected ? factionColor : canAfford ? '#2a2a3a' : '#1a1a1a',
@@ -72,6 +72,9 @@ export function ActionCard({
           {consequence && (
             <span className="text-gray-600">{consequence}</span>
           )}
+          <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-gray-500 group-hover:text-gray-300 tracking-widest">
+            → COMMIT
+          </span>
         </div>
       )}
     </motion.button>
