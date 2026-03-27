@@ -1,7 +1,7 @@
 // frontend/src/utils/audioEngine.ts
-// Cinematic audio engine v5 — Sicario "The Beast" architecture.
-// Slow heartbeat pulse, massive sub-bass, choir-like swells, industrial dread.
-// Reference: Jóhann Jóhannsson — The Beast (Sicario OST)
+// Cinematic audio engine v6 — Dune / tactical wargame architecture.
+// Reference: Hans Zimmer — Dune (2021). Ethnic percussion, metallic rings,
+// processed voice texture, 5-beat tactical rhythm, deep sub presence.
 
 const STORAGE_KEY = 'cc_muted';
 
@@ -22,8 +22,8 @@ function getTickInterval(tier: LambdaTier): number {
 
 function shepardGain(freqHz: number): number {
   const logF = Math.log2(freqHz);
-  const center = Math.log2(60);
-  const sigma = 1.6;
+  const center = Math.log2(55);
+  const sigma = 1.5;
   return Math.exp(-0.5 * Math.pow((logF - center) / sigma, 2));
 }
 
@@ -34,27 +34,24 @@ class AudioEngine {
   private musicRunning = false;
   private currentTier: LambdaTier = 'calm';
 
-  // Shepard (truly subliminal — presence only)
+  // Shepard (subliminal)
   private shepardOscs: OscillatorNode[] = [];
   private shepardGains: GainNode[] = [];
   private shepardGainNode: GainNode | null = null;
   private shepardPhase = 0;
   private shepardTimer: ReturnType<typeof setInterval> | null = null;
 
-  // Sub rumble (always on — room floor)
-  private rumbleGain: GainNode | null = null;
+  // Sub floor (always on)
+  private subGain: GainNode | null = null;
 
-  // Choir swell pad (always on, swells with λ)
-  private choirGain: GainNode | null = null;
-  private choirOscs: OscillatorNode[] = [];
+  // Dune voice texture (always on — processed formant drone)
+  private voiceGain: GainNode | null = null;
+  private voiceOscs: OscillatorNode[] = [];
 
-  // Heartbeat pulse (λ ≥ 1.5)
-  private heartbeatGain: GainNode | null = null;
-  private heartbeatActive = false;
-  private heartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
-
-  // Dark brass swell (fires with heartbeat at λ ≥ 1.5)
-  private brassGain: GainNode | null = null;
+  // Tactical rhythm bus (λ ≥ 1.5)
+  private rhythmGain: GainNode | null = null;
+  private rhythmActive = false;
+  private rhythmCycleTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Deep tension layer (λ ≥ 2.0)
   private padGain: GainNode | null = null;
@@ -64,7 +61,7 @@ class AudioEngine {
   private ghostActive = false;
   private ghostTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // Tick (barely audible)
+  // Tick
   private tickInterval: ReturnType<typeof setInterval> | null = null;
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -109,26 +106,26 @@ class AudioEngine {
 
   stopMusic(): void {
     this.musicRunning = false;
-    this.heartbeatActive = false;
+    this.rhythmActive = false;
     this.ghostActive = false;
 
-    if (this.shepardTimer !== null) { clearInterval(this.shepardTimer); this.shepardTimer = null; }
-    if (this.tickInterval !== null) { clearInterval(this.tickInterval); this.tickInterval = null; }
-    if (this.heartbeatTimeout !== null) { clearTimeout(this.heartbeatTimeout); this.heartbeatTimeout = null; }
-    if (this.ghostTimeout !== null) { clearTimeout(this.ghostTimeout); this.ghostTimeout = null; }
+    if (this.shepardTimer !== null)       { clearInterval(this.shepardTimer); this.shepardTimer = null; }
+    if (this.tickInterval !== null)        { clearInterval(this.tickInterval); this.tickInterval = null; }
+    if (this.rhythmCycleTimeout !== null)  { clearTimeout(this.rhythmCycleTimeout); this.rhythmCycleTimeout = null; }
+    if (this.ghostTimeout !== null)        { clearTimeout(this.ghostTimeout); this.ghostTimeout = null; }
 
     if (this.ctx) {
       const now = this.ctx.currentTime;
-      [this.shepardGainNode, this.rumbleGain, this.choirGain, this.heartbeatGain,
-       this.brassGain, this.padGain].forEach(g => {
-        if (g) { g.gain.cancelScheduledValues(now); g.gain.linearRampToValueAtTime(0, now + 1.5); }
-      });
+      [this.shepardGainNode, this.subGain, this.voiceGain, this.rhythmGain, this.padGain]
+        .forEach(g => {
+          if (g) { g.gain.cancelScheduledValues(now); g.gain.linearRampToValueAtTime(0, now + 1.5); }
+        });
       setTimeout(() => {
-        [...this.shepardOscs, ...this.choirOscs, ...this.padOscs].forEach(o => {
+        [...this.shepardOscs, ...this.voiceOscs, ...this.padOscs].forEach(o => {
           if (o) { try { o.stop(); } catch {} }
         });
         this.shepardOscs = []; this.shepardGains = [];
-        this.choirOscs = []; this.padOscs = [];
+        this.voiceOscs = []; this.padOscs = [];
       }, 1600);
     }
   }
@@ -143,38 +140,38 @@ class AudioEngine {
     this.currentTier = tier;
 
     const now = ctx.currentTime;
-    const RAMP = 4.0; // slow, cinematic
+    const RAMP = 3.5;
 
-    // Choir: present at all times, swells with tension
-    if (this.choirGain) {
-      const targets: Record<LambdaTier, number> = { calm: 0.025, tension: 0.055, crisis: 0.08, chaos: 0.1 };
-      this.choirGain.gain.cancelScheduledValues(now);
-      this.choirGain.gain.linearRampToValueAtTime(targets[tier], now + RAMP);
+    // Voice texture: builds with λ
+    if (this.voiceGain) {
+      const targets: Record<LambdaTier, number> = { calm: 0.022, tension: 0.04, crisis: 0.06, chaos: 0.075 };
+      this.voiceGain.gain.cancelScheduledValues(now);
+      this.voiceGain.gain.linearRampToValueAtTime(targets[tier], now + RAMP);
     }
 
-    // Heartbeat: on at tension+
-    if (this.heartbeatGain) {
+    // Tactical rhythm: on at tension+
+    if (this.rhythmGain) {
       const target = tier === 'calm' ? 0 : 1;
-      this.heartbeatGain.gain.cancelScheduledValues(now);
-      this.heartbeatGain.gain.linearRampToValueAtTime(target, now + RAMP);
-      if (tier !== 'calm' && !this.heartbeatActive) {
-        this.heartbeatActive = true;
-        this._scheduleHeartbeat(ctx);
+      this.rhythmGain.gain.cancelScheduledValues(now);
+      this.rhythmGain.gain.linearRampToValueAtTime(target, now + RAMP);
+      if (tier !== 'calm' && !this.rhythmActive) {
+        this.rhythmActive = true;
+        this._scheduleRhythmCycle(ctx);
       } else if (tier === 'calm') {
-        this.heartbeatActive = false;
+        this.rhythmActive = false;
       }
     }
 
     // Deep pad: on at crisis+
     if (this.padGain) {
-      const target = (tier === 'crisis' || tier === 'chaos') ? 0.065 : 0;
+      const target = (tier === 'crisis' || tier === 'chaos') ? 0.06 : 0;
       this.padGain.gain.cancelScheduledValues(now);
       this.padGain.gain.linearRampToValueAtTime(target, now + RAMP);
     }
 
-    // Shepard: stays subliminal
+    // Shepard: truly subliminal
     if (this.shepardGainNode) {
-      const target = tier === 'chaos' ? 0.006 : 0.003;
+      const target = tier === 'chaos' ? 0.005 : 0.003;
       this.shepardGainNode.gain.cancelScheduledValues(now);
       this.shepardGainNode.gain.linearRampToValueAtTime(target, now + RAMP);
     }
@@ -195,12 +192,12 @@ class AudioEngine {
 
   private _buildLayers(ctx: AudioContext): void {
 
-    // ── Shepard (subliminal, 0.003 gain, heavy reverb) ──
+    // ── Shepard (subliminal — 0.003, 60s cycle, heavy LPF) ──
     this.shepardGainNode = ctx.createGain();
     this.shepardGainNode.gain.value = 0.003;
     const shepReverb = this._makeReverb(ctx, 4.0);
     const shepLPF = ctx.createBiquadFilter();
-    shepLPF.type = 'lowpass'; shepLPF.frequency.value = 250;
+    shepLPF.type = 'lowpass'; shepLPF.frequency.value = 200;
     shepReverb.connect(shepLPF); shepLPF.connect(this.shepardGainNode);
     this.shepardGainNode.connect(this.masterGain!);
 
@@ -217,109 +214,104 @@ class AudioEngine {
       this.shepardOscs.push(osc); this.shepardGains.push(gain);
     });
 
-    const PERIOD_MS = 60000; // slower — 60s octave cycle
-    let lastTime = performance.now();
+    let lastShepTime = performance.now();
     this.shepardTimer = setInterval(() => {
       if (!this.musicRunning) return;
       const now = performance.now();
-      const dt = (now - lastTime) / PERIOD_MS;
-      lastTime = now;
+      const dt = (now - lastShepTime) / 60000;
+      lastShepTime = now;
       this.shepardPhase = (this.shepardPhase + dt) % 1;
       BASE_FREQS.forEach((baseFreq, i) => {
         const phase = (this.shepardPhase + i / BASE_FREQS.length) % 1;
         const freq = baseFreq * Math.pow(2, phase);
-        const g = shepardGain(freq);
         if (this.shepardOscs[i]) this.shepardOscs[i].frequency.value = freq;
-        if (this.shepardGains[i]) this.shepardGains[i].gain.value = g;
+        if (this.shepardGains[i]) this.shepardGains[i].gain.value = shepardGain(freq);
       });
     }, 120);
 
-    // ── Sub rumble (always on — floor presence) ──
-    this.rumbleGain = ctx.createGain();
-    this.rumbleGain.gain.value = 0.014;
-    const rumbleLPF = ctx.createBiquadFilter();
-    rumbleLPF.type = 'lowpass'; rumbleLPF.frequency.value = 80;
-    this.rumbleGain.connect(rumbleLPF); rumbleLPF.connect(this.masterGain!);
+    // ── Sub floor (always on — brown noise <80Hz) ──
+    this.subGain = ctx.createGain();
+    this.subGain.gain.value = 0.013;
+    const subLPF = ctx.createBiquadFilter();
+    subLPF.type = 'lowpass'; subLPF.frequency.value = 80;
+    this.subGain.connect(subLPF); subLPF.connect(this.masterGain!);
+    const subLen = Math.floor(ctx.sampleRate * 5);
+    const subBuf = ctx.createBuffer(1, subLen, ctx.sampleRate);
+    const sd = subBuf.getChannelData(0);
+    let sv = 0;
+    for (let i = 0; i < subLen; i++) { sv = (sv + 0.015 * (Math.random() * 2 - 1)) / 1.015; sd[i] = sv * 4; }
+    const subLoop = ctx.createBufferSource();
+    subLoop.buffer = subBuf; subLoop.loop = true;
+    subLoop.connect(this.subGain); subLoop.start();
 
-    const rLen = Math.floor(ctx.sampleRate * 6);
-    const rBuf = ctx.createBuffer(1, rLen, ctx.sampleRate);
-    const rd = rBuf.getChannelData(0);
-    let rv = 0;
-    for (let i = 0; i < rLen; i++) {
-      rv = (rv + 0.015 * (Math.random() * 2 - 1)) / 1.015;
-      rd[i] = rv * 4;
-    }
-    const rLoop = ctx.createBufferSource();
-    rLoop.buffer = rBuf; rLoop.loop = true;
-    rLoop.connect(this.rumbleGain); rLoop.start();
+    // ── Dune voice texture (formant drone — alien/human hybrid) ──
+    // Simulates the processed choir quality of Zimmer's Dune sound.
+    // Three formant layers ("oooh" vowel shape): F1≈280Hz, F2≈700Hz, F3≈2200Hz
+    // Only F1 and F2 used (keep it dark, no brightness).
+    // Each formant = narrow bandpass over looping noise + slow vibrato.
+    this.voiceGain = ctx.createGain();
+    this.voiceGain.gain.value = 0.022;
+    const voiceReverb = this._makeReverb(ctx, 4.5);
+    this.voiceGain.connect(voiceReverb); voiceReverb.connect(this.masterGain!);
 
-    // ── Choir swell (always on, builds with λ) ──
-    // Multiple detuned sine oscillators with very slow attack character.
-    // Simulates the choir-like quality of Sicario's string/brass ensemble.
-    this.choirGain = ctx.createGain();
-    this.choirGain.gain.value = 0.025; // starts quiet at calm
+    // Also add direct dry path at lower level (gives definition)
+    const voiceDryGain = ctx.createGain();
+    voiceDryGain.gain.value = 0.008;
+    this.voiceGain.connect(voiceDryGain); voiceDryGain.connect(this.masterGain!);
 
-    const choirReverb = this._makeReverb(ctx, 5.0); // long hall reverb
-    const choirLPF = ctx.createBiquadFilter();
-    choirLPF.type = 'lowpass'; choirLPF.frequency.value = 350;
-    this.choirGain.connect(choirReverb);
-    choirReverb.connect(choirLPF);
-    choirLPF.connect(this.masterGain!);
-
-    // 8 oscillators spread across two octave-spaced groups, all slightly detuned
-    // Creates that dense, warm cluster of voices
-    const choirFreqs = [
-      // Lower group (cello/bass register)
-      62, 65, 68, 73,
-      // Upper group (viola register) — exactly one octave up + slight detuning
-      124, 129, 136, 146,
+    const formantData = [
+      { freq: 275, Q: 8,  vibRate: 0.15, vibDepth: 6  },  // F1 low vowel
+      { freq: 690, Q: 12, vibRate: 0.11, vibDepth: 10 },  // F2 vowel character
+      { freq: 265, Q: 6,  vibRate: 0.08, vibDepth: 4  },  // F1 detuned copy
+      { freq: 710, Q: 10, vibRate: 0.13, vibDepth: 8  },  // F2 detuned copy
     ];
-    this.choirOscs = choirFreqs.map(freq => {
-      const osc = ctx.createOscillator();
-      osc.type = 'triangle'; // warmer than sine, not buzzy
-      osc.frequency.value = freq;
-      osc.connect(this.choirGain!);
-      osc.start();
-      return osc;
+
+    // Shared noise buffer for all formants
+    const vNoiseLen = Math.floor(ctx.sampleRate * 3);
+    const vNoiseBuf = ctx.createBuffer(1, vNoiseLen, ctx.sampleRate);
+    const vnd = vNoiseBuf.getChannelData(0);
+    for (let i = 0; i < vNoiseLen; i++) vnd[i] = Math.random() * 2 - 1;
+
+    formantData.forEach(f => {
+      const src = ctx.createBufferSource();
+      src.buffer = vNoiseBuf; src.loop = true;
+
+      const bpf = ctx.createBiquadFilter();
+      bpf.type = 'bandpass';
+      bpf.frequency.value = f.freq;
+      bpf.Q.value = f.Q;
+
+      // Slow vibrato on formant frequency
+      const vib = ctx.createOscillator();
+      vib.type = 'sine'; vib.frequency.value = f.vibRate;
+      const vibDepth = ctx.createGain();
+      vibDepth.gain.value = f.vibDepth;
+      vib.connect(vibDepth); vibDepth.connect(bpf.frequency);
+      vib.start();
+      this.voiceOscs.push(vib);
+
+      const fGain = ctx.createGain();
+      fGain.gain.value = 0.35;
+      src.connect(bpf); bpf.connect(fGain); fGain.connect(this.voiceGain!);
+      src.start();
     });
 
-    // Very slow breath on choir (0.03Hz = 33s cycle)
-    const choirBreath = ctx.createOscillator();
-    choirBreath.type = 'sine';
-    choirBreath.frequency.value = 0.03;
-    const breathDepth = ctx.createGain();
-    breathDepth.gain.value = 0.008;
-    choirBreath.connect(breathDepth);
-    breathDepth.connect(this.choirGain.gain);
-    choirBreath.start();
-
-    // ── Heartbeat bus (fades in at λ ≥ 1.5) ──
-    // Large room reverb — the heartbeat reverberates through a massive space
-    this.heartbeatGain = ctx.createGain();
-    this.heartbeatGain.gain.value = 0;
-    const hbReverb = this._makeReverb(ctx, 2.5);
-    this.heartbeatGain.connect(hbReverb);
-    hbReverb.connect(this.masterGain!);
-    // Also dry signal for punch
-    this.heartbeatGain.connect(this.masterGain!);
-
-    // ── Brass swell bus (fires with heartbeat) ──
-    this.brassGain = ctx.createGain();
-    this.brassGain.gain.value = 1;
-    const brassReverb = this._makeReverb(ctx, 3.5);
-    const brassLPF = ctx.createBiquadFilter();
-    brassLPF.type = 'lowpass'; brassLPF.frequency.value = 300;
-    this.brassGain.connect(brassReverb);
-    brassReverb.connect(brassLPF);
-    brassLPF.connect(this.masterGain!);
+    // ── Tactical rhythm bus (fades in at λ ≥ 1.5) ──
+    this.rhythmGain = ctx.createGain();
+    this.rhythmGain.gain.value = 0;
+    const rhythmReverb = this._makeReverb(ctx, 1.2);
+    // Wet + dry: reverb for space, direct for punch
+    this.rhythmGain.connect(rhythmReverb); rhythmReverb.connect(this.masterGain!);
+    this.rhythmGain.connect(this.masterGain!);
 
     // ── Deep pad (λ ≥ 2.0) ──
     this.padGain = ctx.createGain();
     this.padGain.gain.value = 0;
     const padReverb = this._makeReverb(ctx, 5.0);
-    this.padGain.connect(padReverb); padReverb.connect(this.masterGain!);
-    // Very deep minor cluster
-    [44, 52, 58, 69, 77].forEach(freq => {
+    const padLPF = ctx.createBiquadFilter();
+    padLPF.type = 'lowpass'; padLPF.frequency.value = 280;
+    this.padGain.connect(padReverb); padReverb.connect(padLPF); padLPF.connect(this.masterGain!);
+    [41, 49, 55, 65, 82].forEach(freq => {
       const osc = ctx.createOscillator();
       osc.type = 'sine'; osc.frequency.value = freq;
       osc.connect(this.padGain!); osc.start();
@@ -327,74 +319,104 @@ class AudioEngine {
     });
   }
 
-  // ── Heartbeat pattern ─────────────────────────────────────────────────────
-  // lub-DUB heartbeat: heavy BOOM at 0ms, lighter boom at 220ms
-  // Cycle: ~1600ms (~38 BPM) — slow, oppressive
+  // ── Tactical rhythm — 5-beat cycle ────────────────────────────────────────
+  // 5 beats at 60 BPM = 5000ms cycle. Irregular accent pattern: calculated, alien.
+  // Pattern: [THUD@0, metal@1100, snap@2000, metal@2900, snap-light@3700]
+  // The 5-beat grid (vs 4/4) gives the tactical, slightly inhuman quality.
 
-  private _scheduleHeartbeat(ctx: AudioContext): void {
-    if (!this.heartbeatActive || !this.musicRunning) return;
+  private _scheduleRhythmCycle(ctx: AudioContext): void {
+    if (!this.rhythmActive || !this.musicRunning) return;
 
-    // lub (heavy)
-    this._fireLub(ctx);
-    // DUB (softer, 220ms later)
-    setTimeout(() => {
-      if (!this.heartbeatActive || !this.ctx) return;
-      this._fireDub(this.ctx);
-      // Brass swell with every lub-DUB
-      this._fireBrassSwell(this.ctx);
-    }, 220);
+    const hits: Array<{ time: number; type: 'thud' | 'metal' | 'snap' | 'snap-light' }> = [
+      { time: 0,    type: 'thud'       },
+      { time: 1100, type: 'metal'      },
+      { time: 2000, type: 'snap'       },
+      { time: 2900, type: 'metal'      },
+      { time: 3700, type: 'snap-light' },
+    ];
 
-    this.heartbeatTimeout = setTimeout(() => this._scheduleHeartbeat(ctx), 1600);
-  }
-
-  // Heavy lub: sub-bass sine, pitch drop, massive attack
-  private _fireLub(ctx: AudioContext): void {
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(48, now);
-    osc.frequency.exponentialRampToValueAtTime(24, now + 0.5);
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.45, now + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
-    osc.connect(gain); gain.connect(this.heartbeatGain!);
-    osc.start(now); osc.stop(now + 0.7);
-  }
-
-  // Softer dub: same shape but quieter and slightly higher
-  private _fireDub(ctx: AudioContext): void {
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(38, now);
-    osc.frequency.exponentialRampToValueAtTime(20, now + 0.4);
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.28, now + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-    osc.connect(gain); gain.connect(this.heartbeatGain!);
-    osc.start(now); osc.stop(now + 0.55);
-  }
-
-  // Slow low brass swell — trombone cluster, very slow attack, 2.5s decay
-  private _fireBrassSwell(ctx: AudioContext): void {
-    if (!this.heartbeatActive) return;
-    const now = ctx.currentTime;
-    // Minor cluster: root, flat 3rd, 5th — dark, heavy
-    const brFreqs = [44, 52, 66, 88];
-    brFreqs.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      osc.type = 'sawtooth';
-      osc.frequency.value = freq;
-      const gain = ctx.createGain();
-      const pk = i === 0 ? 0.065 : 0.045;
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(pk, now + 0.18); // slow brass attack
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
-      osc.connect(gain); gain.connect(this.brassGain!);
-      osc.start(now); osc.stop(now + 2.6);
+    hits.forEach(({ time, type }) => {
+      setTimeout(() => {
+        if (!this.rhythmActive || !this.ctx) return;
+        switch (type) {
+          case 'thud':       this._fireThud(this.ctx); break;
+          case 'metal':      this._fireMetal(this.ctx); break;
+          case 'snap':       this._fireSnap(this.ctx, 0.065); break;
+          case 'snap-light': this._fireSnap(this.ctx, 0.032); break;
+        }
+      }, time);
     });
+
+    this.rhythmCycleTimeout = setTimeout(() => this._scheduleRhythmCycle(ctx), 5000);
+  }
+
+  // Tribal sub drum — low, fast, no pitch ring
+  private _fireThud(ctx: AudioContext): void {
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(52, now);
+    osc.frequency.exponentialRampToValueAtTime(26, now + 0.3);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.36, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    osc.connect(gain); gain.connect(this.rhythmGain!);
+    osc.start(now); osc.stop(now + 0.5);
+  }
+
+  // Metallic ring — like a struck bowl or anvil edge. Short, resonant, mid-high.
+  // This is the distinctive Dune percussion timbre.
+  private _fireMetal(ctx: AudioContext): void {
+    const now = ctx.currentTime;
+    // Two detuned high-Q resonators for the metallic ring character
+    [520, 538].forEach(freq => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      // Slight pitch drop — metal resonance characteristic
+      osc.frequency.setValueAtTime(freq * 1.04, now);
+      osc.frequency.exponentialRampToValueAtTime(freq, now + 0.05);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.045, now + 0.003);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+      osc.connect(gain); gain.connect(this.rhythmGain!);
+      osc.start(now); osc.stop(now + 0.6);
+    });
+
+    // Short noise transient for the attack "click"
+    const bufSize = Math.floor(ctx.sampleRate * 0.015);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = 2200; filter.Q.value = 1;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.028, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
+    src.connect(filter); filter.connect(g); g.connect(this.rhythmGain!);
+    src.start(now); src.stop(now + 0.018);
+  }
+
+  // Dry mid snap — tactical readout feel
+  private _fireSnap(ctx: AudioContext, gainAmt: number): void {
+    const now = ctx.currentTime;
+    const bufSize = Math.floor(ctx.sampleRate * 0.06);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = 240; filter.Q.value = 3;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(gainAmt, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+    src.connect(filter); filter.connect(gain); gain.connect(this.rhythmGain!);
+    src.start(now); src.stop(now + 0.065);
   }
 
   // ── Ghost ─────────────────────────────────────────────────────────────────
@@ -404,23 +426,20 @@ class AudioEngine {
     this.ghostTimeout = setTimeout(() => {
       if (!this.ghostActive || !this.ctx) return;
       const now = this.ctx.currentTime;
-      const bufSize = Math.floor(this.ctx.sampleRate * 1.5);
-      const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
-      const src = this.ctx.createBufferSource();
-      src.buffer = buf;
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'bandpass'; filter.frequency.value = 280; filter.Q.value = 10;
-      const reverb = this._makeReverb(this.ctx, 2.0);
-      const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.04, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
-      src.connect(filter); filter.connect(reverb);
-      reverb.connect(gain); gain.connect(this.masterGain!);
-      src.start(now); src.stop(now + 1.55);
+      // Deep resonant groan — Dune-style
+      [180, 190].forEach(freq => {
+        const osc = this.ctx!.createOscillator();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        const g = this.ctx!.createGain();
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(0.038, now + 0.4);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+        const rev = this._makeReverb(this.ctx!, 2.5);
+        osc.connect(g); g.connect(rev); rev.connect(this.masterGain!);
+        osc.start(now); osc.stop(now + 2.1);
+      });
       this._scheduleGhost(ctx);
-    }, 5000 + Math.random() * 5000);
+    }, 5000 + Math.random() * 6000);
   }
 
   // ── Tick ──────────────────────────────────────────────────────────────────
@@ -439,19 +458,19 @@ class AudioEngine {
 
   private _fireTick(ctx: AudioContext): void {
     const now = ctx.currentTime;
-    const bufSize = Math.floor(ctx.sampleRate * 0.02);
+    const bufSize = Math.floor(ctx.sampleRate * 0.018);
     const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
     const d = buf.getChannelData(0);
     for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
     const src = ctx.createBufferSource();
     src.buffer = buf;
     const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass'; filter.frequency.value = 120; filter.Q.value = 2;
+    filter.type = 'bandpass'; filter.frequency.value = 130; filter.Q.value = 2;
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.007, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
     src.connect(filter); filter.connect(gain); gain.connect(this.masterGain!);
-    src.start(now); src.stop(now + 0.022);
+    src.start(now); src.stop(now + 0.02);
   }
 
   // ── Reverb ────────────────────────────────────────────────────────────────
@@ -476,13 +495,16 @@ class AudioEngine {
     const ctx = this.ensureReady();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine'; osc.frequency.value = 320;
-    gain.gain.setValueAtTime(0.07, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-    osc.connect(gain); gain.connect(this.masterGain!);
-    osc.start(now); osc.stop(now + 0.1);
+    // Tactical click — metal-tinged, short
+    [480, 490].forEach(freq => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.connect(gain); gain.connect(this.masterGain!);
+      osc.start(now); osc.stop(now + 0.13);
+    });
   }
 
   playPhaseTransition(): void {
@@ -492,12 +514,12 @@ class AudioEngine {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(80, now);
-    osc.frequency.linearRampToValueAtTime(120, now + 0.3);
-    gain.gain.setValueAtTime(0.05, now);
-    gain.gain.linearRampToValueAtTime(0.001, now + 0.5);
+    osc.frequency.setValueAtTime(75, now);
+    osc.frequency.linearRampToValueAtTime(110, now + 0.35);
+    gain.gain.setValueAtTime(0.048, now);
+    gain.gain.linearRampToValueAtTime(0.001, now + 0.55);
     osc.connect(gain); gain.connect(this.masterGain!);
-    osc.start(now); osc.stop(now + 0.55);
+    osc.start(now); osc.stop(now + 0.6);
   }
 
   playCascadeFire(): void {
@@ -505,47 +527,43 @@ class AudioEngine {
     if (!ctx) return;
     const now = ctx.currentTime;
 
-    // Deep sub impact
+    // Heavy sub impact
     const sub = ctx.createOscillator();
     const subG = ctx.createGain();
     sub.type = 'sine';
-    sub.frequency.setValueAtTime(65, now);
-    sub.frequency.exponentialRampToValueAtTime(30, now + 0.35);
-    subG.gain.setValueAtTime(0.22, now);
-    subG.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    sub.frequency.setValueAtTime(60, now);
+    sub.frequency.exponentialRampToValueAtTime(28, now + 0.4);
+    subG.gain.setValueAtTime(0.2, now);
+    subG.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
     sub.connect(subG); subG.connect(this.masterGain!);
-    sub.start(now); sub.stop(now + 0.6);
+    sub.start(now); sub.stop(now + 0.65);
 
-    // Low rumble burst
-    const bufSize = Math.floor(ctx.sampleRate * 0.4);
-    const nBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-    const d = nBuf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
-    const src = ctx.createBufferSource();
-    src.buffer = nBuf;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass'; filter.frequency.value = 180;
-    const nG = ctx.createGain();
-    nG.gain.setValueAtTime(0.1, now);
-    nG.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-    src.connect(filter); filter.connect(nG); nG.connect(this.masterGain!);
-    src.start(now); src.stop(now + 0.42);
+    // Metallic ring layer (cascade = something structural breaking)
+    [440, 455].forEach(freq => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.035, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+      osc.connect(gain); gain.connect(this.masterGain!);
+      osc.start(now); osc.stop(now + 0.85);
+    });
   }
 
   playLambdaThreshold(): void {
     const ctx = this.ensureReady();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const reverb = this._makeReverb(ctx, 2.5);
+    const reverb = this._makeReverb(ctx, 2.0);
     reverb.connect(this.masterGain!);
-    [44, 55, 66].forEach(freq => {
+    [44, 52, 66].forEach(freq => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine'; osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.12, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+      gain.gain.setValueAtTime(0.11, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
       osc.connect(gain); gain.connect(reverb);
-      osc.start(now); osc.stop(now + 1.85);
+      osc.start(now); osc.stop(now + 1.65);
     });
   }
 }
