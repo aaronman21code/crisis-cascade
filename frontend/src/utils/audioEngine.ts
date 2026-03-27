@@ -144,7 +144,7 @@ class AudioEngine {
 
     // Voice texture: builds with λ
     if (this.voiceGain) {
-      const targets: Record<LambdaTier, number> = { calm: 0.022, tension: 0.04, crisis: 0.06, chaos: 0.075 };
+      const targets: Record<LambdaTier, number> = { calm: 0.04, tension: 0.07, crisis: 0.1, chaos: 0.13 };
       this.voiceGain.gain.cancelScheduledValues(now);
       this.voiceGain.gain.linearRampToValueAtTime(targets[tier], now + RAMP);
     }
@@ -231,7 +231,7 @@ class AudioEngine {
 
     // ── Sub floor (always on — brown noise <80Hz) ──
     this.subGain = ctx.createGain();
-    this.subGain.gain.value = 0.013;
+    this.subGain.gain.value = 0.02;
     const subLPF = ctx.createBiquadFilter();
     subLPF.type = 'lowpass'; subLPF.frequency.value = 80;
     this.subGain.connect(subLPF); subLPF.connect(this.masterGain!);
@@ -250,7 +250,7 @@ class AudioEngine {
     // Only F1 and F2 used (keep it dark, no brightness).
     // Each formant = narrow bandpass over looping noise + slow vibrato.
     this.voiceGain = ctx.createGain();
-    this.voiceGain.gain.value = 0.022;
+    this.voiceGain.gain.value = 0.04;
     const voiceReverb = this._makeReverb(ctx, 4.5);
     this.voiceGain.connect(voiceReverb); voiceReverb.connect(this.masterGain!);
 
@@ -359,7 +359,7 @@ class AudioEngine {
     osc.frequency.setValueAtTime(52, now);
     osc.frequency.exponentialRampToValueAtTime(26, now + 0.3);
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.36, now + 0.005);
+    gain.gain.linearRampToValueAtTime(0.52, now + 0.005);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
     osc.connect(gain); gain.connect(this.rhythmGain!);
     osc.start(now); osc.stop(now + 0.5);
@@ -379,7 +379,7 @@ class AudioEngine {
       osc.frequency.exponentialRampToValueAtTime(freq, now + 0.05);
       const gain = ctx.createGain();
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.045, now + 0.003);
+      gain.gain.linearRampToValueAtTime(0.072, now + 0.003);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
       osc.connect(gain); gain.connect(this.rhythmGain!);
       osc.start(now); osc.stop(now + 0.6);
@@ -395,7 +395,7 @@ class AudioEngine {
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass'; filter.frequency.value = 2200; filter.Q.value = 1;
     const g = ctx.createGain();
-    g.gain.setValueAtTime(0.028, now);
+    g.gain.setValueAtTime(0.045, now);
     g.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
     src.connect(filter); filter.connect(g); g.connect(this.rhythmGain!);
     src.start(now); src.stop(now + 0.018);
@@ -413,7 +413,7 @@ class AudioEngine {
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass'; filter.frequency.value = 240; filter.Q.value = 3;
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(gainAmt, now);
+    gain.gain.setValueAtTime(gainAmt * 1.5, now); // boosted
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
     src.connect(filter); filter.connect(gain); gain.connect(this.rhythmGain!);
     src.start(now); src.stop(now + 0.065);
