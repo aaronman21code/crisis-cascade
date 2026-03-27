@@ -7,6 +7,7 @@ import { useGameStore } from '../../store/game';
 import { abstractLambda } from '../../utils/stanceEngine';
 import { FACTION_ACTIONS } from '@engine/factionActions';
 import { FactionId } from '@engine/gameTheoryData';
+import { audioEngine } from '../../utils/audioEngine';
 
 const FACTION_ORDER: FactionId[] = ['US', 'IRAN', 'CHINA', 'BRICS', 'LEGACY', 'CRYPTO', 'EUROPE', 'SE_ASIA'];
 
@@ -19,9 +20,30 @@ export function ResolvingScreen() {
 
   const [revealedCount, setRevealedCount] = useState(0);
   const [metricsVisible, setMetricsVisible] = useState(false);
+  const [cascadeFlash, setCascadeFlash] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const factionCount = FACTION_ORDER.filter(fId => resolvedActions[fId]).length;
+
+  // Play SFX when each faction card reveals
+  useEffect(() => {
+    if (revealedCount === 0) return;
+    const idx = revealedCount - 1;
+    const fId = FACTION_ORDER[idx];
+    const resolved = resolvedActions[fId];
+    if (!resolved) return;
+    const actionData = FACTION_ACTIONS[fId]?.find(a => a.id === resolved.actionId);
+    const delta = actionData?.lambdaDelta ?? 0;
+    audioEngine.playFactionReveal(delta, fId === playerFaction);
+  }, [revealedCount]);
+
+  // Cascade flash when metrics appear
+  useEffect(() => {
+    if (metricsVisible && newCascades.length > 0) {
+      setCascadeFlash(true);
+      setTimeout(() => setCascadeFlash(false), 700);
+    }
+  }, [metricsVisible]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
@@ -54,13 +76,26 @@ export function ResolvingScreen() {
 
   return (
     <motion.div
-      className="min-h-screen text-white p-6"
+      className="min-h-screen text-white p-6 relative"
       style={{ backgroundColor: '#080810' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, x: -30 }}
       transition={{ duration: 0.35 }}
     >
+      {/* Cascade flash overlay */}
+      <AnimatePresence>
+        {cascadeFlash && (
+          <motion.div
+            className="fixed inset-0 pointer-events-none z-50"
+            initial={{ opacity: 0.18 }}
+            animate={{ opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            style={{ backgroundColor: '#ef4444' }}
+          />
+        )}
+      </AnimatePresence>
       <div className="max-w-2xl mx-auto">
         <GameHeader />
 
@@ -141,9 +176,9 @@ export function ResolvingScreen() {
         <AnimatePresence>
           {metricsVisible && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
             >
               {/* Global metrics */}
               <div className="grid grid-cols-3 gap-3 mb-5">

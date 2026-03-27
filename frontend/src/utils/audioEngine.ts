@@ -327,11 +327,10 @@ class AudioEngine {
   private _scheduleRhythmCycle(ctx: AudioContext): void {
     if (!this.rhythmActive || !this.musicRunning) return;
 
-    const hits: Array<{ time: number; type: 'thud' | 'metal' | 'snap' | 'snap-light' }> = [
+    // 3-beat pattern — THUD + two snaps. Metal rings removed (too distracting).
+    const hits: Array<{ time: number; type: 'thud' | 'snap' | 'snap-light' }> = [
       { time: 0,    type: 'thud'       },
-      { time: 1100, type: 'metal'      },
       { time: 2000, type: 'snap'       },
-      { time: 2900, type: 'metal'      },
       { time: 3700, type: 'snap-light' },
     ];
 
@@ -340,7 +339,6 @@ class AudioEngine {
         if (!this.rhythmActive || !this.ctx) return;
         switch (type) {
           case 'thud':       this._fireThud(this.ctx); break;
-          case 'metal':      this._fireMetal(this.ctx); break;
           case 'snap':       this._fireSnap(this.ctx, 0.065); break;
           case 'snap-light': this._fireSnap(this.ctx, 0.032); break;
         }
@@ -548,6 +546,51 @@ class AudioEngine {
       osc.connect(gain); gain.connect(this.masterGain!);
       osc.start(now); osc.stop(now + 0.85);
     });
+  }
+
+  // Per-faction reveal SFX — action-type based
+  playFactionReveal(lambdaDelta: number, isPlayer: boolean): void {
+    const ctx = this.ensureReady();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const playerMult = isPlayer ? 1.6 : 1.0;
+
+    if (lambdaDelta > 0.15) {
+      // Escalation — low sub kick
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(58, now);
+      osc.frequency.exponentialRampToValueAtTime(28, now + 0.16);
+      gain.gain.setValueAtTime(0.22 * playerMult, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.connect(gain); gain.connect(this.masterGain!);
+      osc.start(now); osc.stop(now + 0.25);
+    } else if (lambdaDelta < -0.1) {
+      // Cooperative — soft high tone
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = 330;
+      gain.gain.setValueAtTime(0.018 * playerMult, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.connect(gain); gain.connect(this.masterGain!);
+      osc.start(now); osc.stop(now + 0.25);
+    } else {
+      // Neutral — dry tactical tap
+      const bufSize = Math.floor(ctx.sampleRate * 0.04);
+      const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass'; filter.frequency.value = 160; filter.Q.value = 3;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.08 * playerMult, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      src.connect(filter); filter.connect(gain); gain.connect(this.masterGain!);
+      src.start(now); src.stop(now + 0.045);
+    }
   }
 
   playLambdaThreshold(): void {

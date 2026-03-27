@@ -189,17 +189,30 @@ export function GOverreachScreen() {
             <AnimatePresence>
               {submittedAction && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 22 }}
                   className="mb-4 rounded-xl border p-5"
-                  style={{ borderColor: `${factionColor}40`, backgroundColor: `${factionColor}08` }}
+                  style={{ borderColor: `${factionColor}50`, backgroundColor: `${factionColor}08`, boxShadow: `0 0 0 1px ${factionColor}20, 0 0 20px 0 ${factionColor}10` }}
                 >
-                  <div className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-1">Action locked</div>
+                  <div className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: factionColor }}>✓ Action locked</div>
                   <div className="font-bold text-base text-white mb-1">{submittedAction.name}</div>
                   <div className="text-sm text-gray-400 leading-relaxed">{submittedAction.flavorText}</div>
-                  <div className="mt-3 text-xs text-gray-600">
-                    Waiting for others... {actionsProgress.submitted}/{actionsProgress.total} submitted
-                  </div>
+                  {actionsProgress.total > 0 && (
+                    <div className="flex items-center gap-1.5 mt-3">
+                      {Array.from({ length: actionsProgress.total }).map((_, i) => (
+                        <motion.span
+                          key={i}
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: i < actionsProgress.submitted ? factionColor : '#2a2a2a' }}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: i * 0.08 }}
+                        />
+                      ))}
+                      <span className="text-[10px] text-gray-600 ml-1">{actionsProgress.submitted}/{actionsProgress.total} committed</span>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
