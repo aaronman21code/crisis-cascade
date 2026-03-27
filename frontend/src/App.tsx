@@ -68,9 +68,8 @@ export default function App() {
       boxShadow: `0 0 0 1px ${color}40, 0 0 16px 0 ${color}18`,
     });
 
-    const nameGlow  = step === 1 ? glow('#3b82f6') : {};
-    const roomGlow  = step === 2 ? glow('#3b82f6') : {};
-    const factionActive = step >= 3;
+    const nameGlow = step === 1 ? glow('#3b82f6') : {};
+    const roomGlow = step === 2 ? glow('#3b82f6') : {};
 
     return (
       <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col items-center justify-center p-6">
@@ -95,10 +94,7 @@ export default function App() {
           </div>
 
           {/* Step 2 — Room Code */}
-          <div
-            className="mb-6 transition-all duration-500"
-            style={{ opacity: step >= 2 ? 1 : 0.35 }}
-          >
+          <div className="mb-6">
             <label className={`block text-xs uppercase mb-1 transition-colors duration-300 ${step === 2 ? 'text-blue-400' : 'text-gray-500'}`}>
               {step === 2 && <span className="mr-1.5 text-blue-500">②</span>}Room Code
             </label>
@@ -109,13 +105,11 @@ export default function App() {
                 value={inputRoom}
                 onChange={e => setInputRoom(e.target.value.toUpperCase())}
                 placeholder="HORMUZ"
-                disabled={step < 2}
               />
               <button
                 type="button"
                 onClick={() => setInputRoom(generateRoomCode())}
-                disabled={step < 2}
-                className="px-3 py-2 border border-[#333] hover:border-gray-500 text-gray-500 hover:text-white rounded text-xs transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-[#333] hover:border-gray-500 text-gray-500 hover:text-white rounded text-xs transition"
               >
                 Generate
               </button>
@@ -123,10 +117,7 @@ export default function App() {
           </div>
 
           {/* Step 3 — Faction */}
-          <div
-            className="mb-8 transition-all duration-500"
-            style={{ opacity: factionActive ? 1 : 0.25 }}
-          >
+          <div className="mb-8">
             <label className={`block text-xs uppercase mb-3 transition-colors duration-300 ${step === 3 ? 'text-blue-400' : 'text-gray-500'}`}>
               {step === 3 && <span className="mr-1.5 text-blue-500">③</span>}Choose Faction
             </label>
@@ -136,18 +127,16 @@ export default function App() {
                 return (
                   <button
                     key={f.id}
-                    onClick={() => factionActive && setSelectedFaction(f.id)}
-                    disabled={!factionActive}
+                    onClick={() => setSelectedFaction(f.id)}
                     className={`text-left p-3 rounded border transition-all duration-200 ${
-                      isSelected ? 'bg-white/5' : factionActive ? 'bg-transparent hover:bg-white/[0.04]' : 'bg-transparent'
+                      isSelected ? 'bg-white/5' : 'bg-transparent hover:bg-white/[0.04]'
                     }`}
                     style={{
-                      borderColor: isSelected ? f.textColor : factionActive ? '#2a2a3a' : '#1a1a1a',
+                      borderColor: isSelected ? f.textColor : '#2a2a3a',
                       boxShadow: isSelected ? `0 0 0 1px ${f.textColor}30, 0 0 12px 0 ${f.textColor}14` : 'none',
-                      cursor: factionActive ? 'pointer' : 'not-allowed',
                     }}
                   >
-                    <div className="font-semibold text-sm transition-colors duration-200" style={{ color: isSelected ? f.textColor : factionActive ? '#e5e7eb' : '#6b7280' }}>
+                    <div className="font-semibold text-sm transition-colors duration-200" style={{ color: isSelected ? f.textColor : '#e5e7eb' }}>
                       {f.label}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">{f.desc}</div>
