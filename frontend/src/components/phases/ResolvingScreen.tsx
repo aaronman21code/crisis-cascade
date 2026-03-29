@@ -228,44 +228,16 @@ export function ResolvingScreen() {
                 </motion.div>
               )}
 
-              {/* Objective progress deltas */}
-              <div className="space-y-2 mb-6">
-                {FACTION_ORDER.map(fId => {
-                  const curr = gameState.factions[fId as FactionId];
-                  const prev = prevState?.factions[fId as FactionId];
-                  if (!curr) return null;
-                  const delta = curr.objectiveProgress - (prev?.objectiveProgress ?? curr.objectiveProgress);
-                  const color = FACTION_COLORS[fId] ?? '#888';
-                  const isMe = fId === playerFaction;
-                  return (
-                    <div key={fId} className="flex items-center gap-3">
-                      <span
-                        className="text-[10px] font-mono w-16"
-                        style={{ color: isMe ? color : '#6b7280', fontWeight: isMe ? 700 : 400 }}
-                      >
-                        {fId}
-                      </span>
-                      <div className="flex-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{ backgroundColor: color, opacity: isMe ? 1 : 0.5 }}
-                          initial={{ width: `${prev?.objectiveProgress ?? 0}%` }}
-                          animate={{ width: `${curr.objectiveProgress}%` }}
-                          transition={{ duration: 0.8, ease: 'easeOut' }}
-                        />
-                      </div>
-                      {delta !== 0 && (
-                        <span
-                          className="text-[10px] font-mono w-10 text-right"
-                          style={{ color: delta > 0 ? '#22c55e' : '#ef4444' }}
-                        >
-                          {delta > 0 ? '+' : ''}{delta}%
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Continue button */}
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                onClick={advanceToAnalysis}
+                className="w-full py-3 bg-red-700 hover:bg-red-600 rounded font-bold text-sm transition mt-2"
+              >
+                Continue to Analysis →
+              </motion.button>
 
             </motion.div>
           )}
