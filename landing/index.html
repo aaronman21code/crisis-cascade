@@ -586,76 +586,6 @@
 
   <hr class="divider" />
 
-  <!-- Section: The Loop -->
-  <section>
-    <div class="section-tag reveal" style="color: #f87171;">The G-M-P-G Loop</div>
-    <h2 class="reveal">Every crisis follows the same four moves.</h2>
-    <p class="section-sub reveal">Not one after the other — simultaneously, feeding each other. The loop ran in 2020. It ran in 2008. It's running now.</p>
-
-    <!-- Loop SVG diagram — desktop, animated -->
-    <svg id="loop-svg" class="loop-svg-wrap svg-desktop reveal" viewBox="0 0 760 165" xmlns="http://www.w3.org/2000/svg" aria-label="G-M-P-G Loop diagram">
-      <defs>
-        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L8,3 z" fill="#3a3a4a" />
-        </marker>
-        <marker id="arr-loop" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L8,3 z" fill="#3a3a4a" />
-        </marker>
-      </defs>
-
-      <!-- Node 1: G_Delay -->
-      <rect id="ln0" x="4" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
-      <text x="82" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 01</text>
-      <text id="lt0" x="82" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Government Delay</text>
-      <text x="82" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Hidden moves.</text>
-      <text x="82" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Factions position.</text>
-
-      <line x1="162" y1="69" x2="192" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
-
-      <!-- Node 2: M_Shock -->
-      <rect id="ln1" x="196" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#f97316" stroke-width="1.5"/>
-      <text x="274" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 02</text>
-      <text id="lt1" x="274" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Media Shock</text>
-      <text x="274" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Fear amplifies.</text>
-      <text x="274" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Headlines drive narrative.</text>
-
-      <line x1="354" y1="69" x2="384" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
-
-      <!-- Node 3: P_Fear -->
-      <rect id="ln2" x="388" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#facc15" stroke-width="1.5"/>
-      <text x="466" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 03</text>
-      <text id="lt2" x="466" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Public Fear</text>
-      <text x="466" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Panic index rises.</text>
-      <text x="466" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Oil prices spike.</text>
-
-      <line x1="546" y1="69" x2="576" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
-
-      <!-- Node 4: G_Overreach -->
-      <rect id="ln3" x="580" y="24" width="176" height="90" rx="8" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
-      <text x="668" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 04</text>
-      <text id="lt3" x="668" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Gov. Overreach</text>
-      <text x="668" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Factions act.</text>
-      <text x="668" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Every move raises tension.</text>
-
-      <path d="M 756,114 Q 756,150 380,150 Q 4,150 4,114" fill="none" stroke="#3a3a4a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr-loop)"/>
-    </svg>
-
-    <!-- Loop mobile fallback -->
-    <div class="svg-mobile">
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div><div class="mobile-step-label">Government Delay</div><div class="mobile-step-sub">Hidden moves. Factions position before the shock lands.</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f97316;"></span><div><div class="mobile-step-label">Media Shock</div><div class="mobile-step-sub">Fear amplifies. Headlines drive the narrative.</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#facc15;"></span><div><div class="mobile-step-label">Public Fear</div><div class="mobile-step-sub">Panic index rises. Oil prices spike.</div></div></div>
-      <div class="mobile-arrow">↓</div>
-      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div><div class="mobile-step-label">Government Overreach</div><div class="mobile-step-sub">Factions act. Every move raises tension for all.</div></div></div>
-    </div>
-
-    <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151; margin-top:0.75rem;" class="reveal">// After every turn, the Loop Analysis screen breaks down exactly what happened.</p>
-  </section>
-
-  <hr class="divider" />
-
   <!-- Section: The Problem / Sub-Games -->
   <section>
     <div class="section-tag reveal" style="color: #f87171;">What's Actually Happening</div>
@@ -790,6 +720,68 @@
     <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151; margin-top:0.25rem;" class="reveal">// Cascade events fire automatically when thresholds are crossed. You can trigger them — or try to prevent them.</p>
   </section>
 
+
+  <hr class="divider" />
+
+  <!-- Section: The Loop -->
+  <section>
+    <div class="section-tag reveal" style="color: #f87171;">The G-M-P-G Loop</div>
+    <h2 class="reveal">Every crisis follows the same four moves.</h2>
+    <p class="section-sub reveal">Not one after the other — simultaneously, feeding each other. The loop ran in 2020. It ran in 2008. It's running now.</p>
+
+    <!-- Loop SVG diagram — desktop, animated -->
+    <svg id="loop-svg" class="loop-svg-wrap svg-desktop reveal" viewBox="0 0 760 165" xmlns="http://www.w3.org/2000/svg" aria-label="G-M-P-G Loop diagram">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#3a3a4a" />
+        </marker>
+        <marker id="arr-loop" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#3a3a4a" />
+        </marker>
+      </defs>
+      <!-- Node 1: G_Delay -->
+      <rect id="ln0" x="4" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
+      <text x="82" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 01</text>
+      <text id="lt0" x="82" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Government Delay</text>
+      <text x="82" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Hidden moves.</text>
+      <text x="82" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Factions position.</text>
+      <line x1="162" y1="69" x2="192" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
+      <!-- Node 2: M_Shock -->
+      <rect id="ln1" x="196" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#f97316" stroke-width="1.5"/>
+      <text x="274" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 02</text>
+      <text id="lt1" x="274" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Media Shock</text>
+      <text x="274" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Fear amplifies.</text>
+      <text x="274" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Headlines drive narrative.</text>
+      <line x1="354" y1="69" x2="384" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
+      <!-- Node 3: P_Fear -->
+      <rect id="ln2" x="388" y="24" width="156" height="90" rx="8" fill="#0d0d12" stroke="#facc15" stroke-width="1.5"/>
+      <text x="466" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 03</text>
+      <text id="lt2" x="466" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Public Fear</text>
+      <text x="466" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Panic index rises.</text>
+      <text x="466" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Oil prices spike.</text>
+      <line x1="546" y1="69" x2="576" y2="69" stroke="#3a3a4a" stroke-width="1.5" marker-end="url(#arr)"/>
+      <!-- Node 4: G_Overreach -->
+      <rect id="ln3" x="580" y="24" width="176" height="90" rx="8" fill="#0d0d12" stroke="#f87171" stroke-width="1.5"/>
+      <text x="668" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280" letter-spacing="1">PHASE 04</text>
+      <text id="lt3" x="668" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Gov. Overreach</text>
+      <text x="668" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Factions act.</text>
+      <text x="668" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af">Every move raises tension.</text>
+      <path d="M 756,114 Q 756,150 380,150 Q 4,150 4,114" fill="none" stroke="#3a3a4a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr-loop)"/>
+    </svg>
+
+    <!-- Loop mobile fallback -->
+    <div class="svg-mobile">
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div><div class="mobile-step-label">Government Delay</div><div class="mobile-step-sub">Hidden moves. Factions position before the shock lands.</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f97316;"></span><div><div class="mobile-step-label">Media Shock</div><div class="mobile-step-sub">Fear amplifies. Headlines drive the narrative.</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#facc15;"></span><div><div class="mobile-step-label">Public Fear</div><div class="mobile-step-sub">Panic index rises. Oil prices spike.</div></div></div>
+      <div class="mobile-arrow">↓</div>
+      <div class="mobile-step"><span class="mobile-step-dot" style="background:#f87171;"></span><div><div class="mobile-step-label">Government Overreach</div><div class="mobile-step-sub">Factions act. Every move raises tension for all.</div></div></div>
+    </div>
+
+    <p style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151; margin-top:0.75rem;" class="reveal">// After every week, the Loop Analysis screen breaks down exactly what happened.</p>
+  </section>
 
   <hr class="divider" />
 
