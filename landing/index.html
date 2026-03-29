@@ -501,50 +501,7 @@
     <h2 class="reveal">Eight interlocking strategic games. Running simultaneously.</h2>
     <p class="section-sub reveal">Each pair of factions runs its own game beneath the surface. Some are shifting. Some are locking. The simulation tracks all of them — and shows you which ones are about to tip.</p>
 
-    <!-- Payoff matrix SVG -->
-    <svg class="reveal svg-desktop" viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg" style="width:100%; margin-bottom:1.5rem;" aria-label="Iran vs US payoff matrix">
-      <!-- Background -->
-      <rect x="0" y="0" width="420" height="190" rx="10" fill="#0d0d12" stroke="#2a2a3a" stroke-width="1"/>
-
-      <!-- Title -->
-      <text x="20" y="24" font-family="JetBrains Mono, monospace" font-size="8" fill="#6b7280" letter-spacing="1.5" text-transform="uppercase">SAMPLE SUB-GAME: IRAN vs US — CHICKEN</text>
-
-      <!-- Col headers -->
-      <text x="225" y="55" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#60a5fa" font-weight="700">US: Deter</text>
-      <text x="340" y="55" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#60a5fa" font-weight="700">US: Strike</text>
-
-      <!-- Row headers -->
-      <text x="95" y="100" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4ade80" font-weight="700">Iran: Block</text>
-      <text x="95" y="148" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4ade80" font-weight="700">Iran: Yield</text>
-
-      <!-- Grid lines -->
-      <line x1="145" y1="60" x2="145" y2="175" stroke="#2a2a3a" stroke-width="1"/>
-      <line x1="285" y1="60" x2="285" y2="175" stroke="#2a2a3a" stroke-width="1"/>
-      <line x1="145" y1="120" x2="400" y2="120" stroke="#2a2a3a" stroke-width="1"/>
-      <line x1="145" y1="60" x2="400" y2="60" stroke="#2a2a3a" stroke-width="1"/>
-      <line x1="145" y1="175" x2="400" y2="175" stroke="#2a2a3a" stroke-width="1"/>
-      <line x1="400" y1="60" x2="400" y2="175" stroke="#2a2a3a" stroke-width="1"/>
-
-      <!-- Cell: Iran Block / US Deter -->
-      <text x="225" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#9ca3af">−2, −3</text>
-      <text x="225" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#6b7280">standoff</text>
-
-      <!-- Cell: Iran Block / US Strike -->
-      <text x="340" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#f87171">−8, −6</text>
-      <text x="340" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#6b7280">mutual loss</text>
-
-      <!-- Cell: Iran Yield / US Deter — Nash Equilibrium highlighted -->
-      <rect x="146" y="121" width="138" height="53" rx="0" fill="#10b98110"/>
-      <rect x="146" y="121" width="138" height="53" rx="0" fill="none" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
-      <text x="225" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#10b981">+4, +2</text>
-      <text x="225" y="160" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#10b981">← Nash Eq.</text>
-
-      <!-- Cell: Iran Yield / US Strike -->
-      <text x="340" y="142" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#9ca3af">−1, −4</text>
-      <text x="340" y="160" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#6b7280">asymmetric</text>
-    </svg>
-
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:0.6rem; margin-top:0.25rem;">
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:0.6rem; margin-top:0.25rem;">
       <div class="reveal" style="background:var(--surface); border:1px solid var(--border-mid); border-left:2px solid #60a5fa; border-radius:8px; padding:0.85rem 1rem; transition-delay:0s">
         <div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#6b7280; margin-bottom:0.2rem; letter-spacing:0.1em;">CHICKEN</div>
         <div style="font-size:0.8rem; font-weight:700; color:#60a5fa; margin-bottom:0.25rem;">Iran–US Escalation</div>
