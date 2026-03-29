@@ -117,7 +117,7 @@ export function ResolvingScreen() {
         <GameHeader />
 
         <div className="text-xs text-gray-600 uppercase tracking-widest mt-4 mb-6">
-          Turn {gameState.turn} — Resolving
+          Week {gameState.turn} — Resolving
         </div>
 
         {/* Faction execution feed */}

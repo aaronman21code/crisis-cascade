@@ -176,7 +176,7 @@ function fillBotsAndProcess(room: Room): void {
     room.turnTimer = setTimeout(() => {
       room.phase = 'g_delay';
       io.to(room.id).emit('phase:change', { phase: 'g_delay', turn: room.state.turn + 1 });
-    }, 22000);
+    }, 45000);
   } else {
     io.to(room.id).emit('game:over', { winner: room.state.winner, state: room.state });
   }

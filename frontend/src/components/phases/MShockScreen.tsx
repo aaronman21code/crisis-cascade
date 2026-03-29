@@ -49,7 +49,7 @@ export function MShockScreen() {
                 <p className="text-sm text-white leading-snug">{item.title}</p>
               </motion.div>
             ))}
-            {turnHeadlines.length === 0 && <p className="text-xs text-gray-600">No new intelligence this turn.</p>}
+            {turnHeadlines.length === 0 && <p className="text-xs text-gray-600">No new intelligence this week.</p>}
           </div>
           <button onClick={skipToOverreach} className="px-6 py-3 bg-white text-black rounded font-bold text-sm hover:bg-gray-200 transition">
             Proceed to Action Phase →
@@ -126,7 +126,7 @@ export function MShockScreen() {
           )}
 
           {turnHeadlines.length === 0 && (
-            <p className="text-xs text-gray-600">No new intelligence this turn.</p>
+            <p className="text-xs text-gray-600">No new intelligence this week.</p>
           )}
         </div>
 

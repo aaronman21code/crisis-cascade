@@ -10,11 +10,11 @@ import { FactionId } from '@engine/gameTheoryData';
 import { scoreActions } from '../../utils/stanceEngine';
 
 const FACTION_INTEL: Record<string, string> = {
-  US:       'Hormuz shipping at 23% of normal. Petrodollar window: 3–4 turns.',
+  US:       'Hormuz shipping at 23% of normal. Petrodollar window: 3–4 weeks.',
   IRAN:     'Strait is ours. Every barrel blocked is leverage. Watch for naval escalation.',
-  CHINA:    'Factory energy reserves at 60%. Blackout threshold is 40% — 2 turns away.',
+  CHINA:    'Factory energy reserves at 60%. Blackout threshold is 40% — 2 weeks away.',
   BRICS:    'Saudi and India are wavering. Yuan clearing window opens this phase.',
-  LEGACY:   'SWIFT defection risk elevated. Capital flight models show 3% crypto bleed per turn.',
+  LEGACY:   'SWIFT defection risk elevated. Capital flight models show 3% crypto bleed per week.',
   CRYPTO:   'Legacy freeze events are your signal. Every block = 2–4% settlement share.',
   DIRECTOR: 'Global stability: degrading. λ acceleration driven by uncoordinated defection.',
 };

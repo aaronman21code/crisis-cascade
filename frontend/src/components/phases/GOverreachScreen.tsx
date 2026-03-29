@@ -157,7 +157,7 @@ export function GOverreachScreen() {
 
         <PhaseHint
           phaseKey="g_overreach"
-          text="Action Phase — commit your faction's move for this turn. All factions act simultaneously. Every action shifts tension (λ) for everyone."
+          text="Action Phase — commit your faction's move for this week. All factions act simultaneously. Every action shifts tension (λ) for everyone."
         />
 
         <div className="mb-4">
@@ -165,7 +165,7 @@ export function GOverreachScreen() {
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: factionColor }}></span>
             <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">G — OVERREACH · ACTION PHASE</span>
           </div>
-          <p className="text-[11px] text-gray-600">Commit your faction's action for this turn. Every move is simultaneous — choose knowing others are choosing too.</p>
+          <p className="text-[11px] text-gray-600">Commit your faction's action for this week. Every move is simultaneous — choose knowing others are choosing too.</p>
         </div>
 
         <div className="mt-4 grid md:grid-cols-[1fr_280px] gap-6 items-start">

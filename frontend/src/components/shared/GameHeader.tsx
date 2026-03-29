@@ -22,7 +22,7 @@ export function GameHeader({ showLambda = false }: Props) {
       <div className="flex flex-col gap-1">
         <PhaseBar current={phase} factionColor={factionColor} />
         <span className="text-xs text-gray-600">
-          Turn {gameState.turn} · {playerFaction}
+          Week {gameState.turn} · {playerFaction}
         </span>
       </div>
       <div className="flex items-center gap-4">

@@ -1,4 +1,5 @@
 // frontend/src/components/LoopAnalysis.tsx
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/game';
 import { GAME_THEORY_DATA, FactionId } from '@engine/gameTheoryData';
@@ -22,9 +23,42 @@ const WINNER_LABELS: Record<string, { title: string; desc: string; color: string
   GLOBAL_LOSS: { title: 'GLOBAL ENERGY LOCKDOWN',  desc: '3.2 billion under restrictions. Energy pool depleted.', color: '#f43f5e' },
 };
 
+const COUNTDOWN_SECONDS = 45;
+
+function SectionGlow({ active, color, children }: { active: boolean; color: string; children: React.ReactNode }) {
+  if (!active) return <>{children}</>;
+  return (
+    <div
+      className="rounded-xl border -mx-2 px-2 py-2"
+      style={{ borderColor: `${color}28`, boxShadow: `0 0 0 1px ${color}14, 0 0 20px 0 ${color}0c` }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function LoopAnalysis() {
   const { gameState, prevState, loopAnalysis, subGames, playerFaction, resetGame, continueObserving, skipAnalysis, observedWinner } = useGameStore();
   const isDirector = playerFaction === 'DIRECTOR';
+
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [showStable, setShowStable] = useState(false);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    setCountdown(COUNTDOWN_SECONDS);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!);
+          skipAnalysis();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
+  }, []);
 
   const prevLambda  = prevState?.globalLambda ?? 1.0;
   const newLambda   = gameState.globalLambda;
@@ -42,11 +76,30 @@ export function LoopAnalysis() {
     .filter(n => n.turn === gameState.turn)
     .slice(0, 3);
 
+  const newCascades = gameState.activeCascades.filter(
+    c => !(prevState?.activeCascades ?? []).includes(c)
+  );
+
+  // Signal detection for glow
+  const tensionChanged = Math.abs(lambdaDelta) > 0.1;
+  const tensionGlowColor = lambdaDelta > 0 ? '#f97316' : '#22c55e';
+  const cascadeGlowActive = newCascades.length > 0;
+  const subGameAlerted = subGames.some(sg => sg.equilibriumState === 'locked' || sg.equilibriumState === 'dominated');
+  const myFaction = playerFaction && playerFaction !== 'DIRECTOR' ? playerFaction as FactionId : null;
+  const myPrev = myFaction ? (prevState?.factions[myFaction]?.objectiveProgress ?? 0) : 0;
+  const myCurr = myFaction ? (gameState.factions[myFaction]?.objectiveProgress ?? 0) : 0;
+  const myDelta = myCurr - myPrev;
+  const myColor = myFaction ? (FACTION_COLORS[myFaction] ?? '#60a5fa') : '#60a5fa';
+
+  // Sub-game split
+  const activeSubGames = subGames.filter(sg => sg.equilibriumState !== 'stable');
+  const stableSubGames = subGames.filter(sg => sg.equilibriumState === 'stable');
+
   return (
     <div className="min-h-screen text-white p-6" style={{ backgroundColor: '#050f08' }}>
       <div className="max-w-lg mx-auto space-y-8">
 
-        {/* Observing banner — persists across turns when in observe mode */}
+        {/* Observing banner */}
         {observedWinner && !isGameOver && (
           <div className="text-[10px] font-mono text-center py-2 px-3 rounded border border-[#2a2a2a] text-gray-600">
             {WINNER_LABELS[observedWinner]?.title ?? observedWinner} · observing continued play
@@ -61,25 +114,16 @@ export function LoopAnalysis() {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 20 }}
               className="text-center py-6 rounded-xl border"
-              style={{
-                borderColor: `${winnerData.color}30`,
-                backgroundColor: `${winnerData.color}08`,
-              }}
+              style={{ borderColor: `${winnerData.color}30`, backgroundColor: `${winnerData.color}08` }}
             >
-              <div className="text-3xl font-black mb-2" style={{ color: winnerData.color }}>
-                {winnerData.title}
-              </div>
+              <div className="text-3xl font-black mb-2" style={{ color: winnerData.color }}>{winnerData.title}</div>
               <div className="text-sm text-gray-400">{winnerData.desc}</div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Hero quote */}
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-        >
+        <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }}>
           <p className="text-xl text-white leading-loose">
             {loopAnalysis ?? `Global tension rose — every uncoordinated move raises pressure for all players.`}
           </p>
@@ -90,19 +134,15 @@ export function LoopAnalysis() {
               {' → '}
               <span style={{ color: lambdaColor }}>{newLambda.toFixed(2)}</span>
               {'  Δ '}
-              <span style={{ color: deltaColor }}>
-                {lambdaDelta >= 0 ? '+' : ''}{lambdaDelta.toFixed(3)}
-              </span>
+              <span style={{ color: deltaColor }}>{lambdaDelta >= 0 ? '+' : ''}{lambdaDelta.toFixed(3)}</span>
             </p>
           )}
         </motion.div>
 
-        {/* 3 headlines */}
+        {/* Headlines */}
         {turnHeadlines.length > 0 && (
           <div>
-            <div className="text-xs text-gray-600 uppercase tracking-widest mb-3 border-b border-[#1a1a1a] pb-2">
-              This Turn
-            </div>
+            <div className="text-xs text-gray-600 uppercase tracking-widest mb-3 border-b border-[#1a1a1a] pb-2">This Week</div>
             <div className="space-y-3">
               {turnHeadlines.map((item, i) => (
                 <motion.div
@@ -123,126 +163,160 @@ export function LoopAnalysis() {
           </div>
         )}
 
-        <div>
-              <div className="space-y-6">
+        <div className="space-y-6">
 
-                {/* Tension stat boxes */}
-                <div className="grid grid-cols-3 gap-3">
-                  <StatBox label="Tension Before" value={tensionLabel(prevLambda)}  color="#9ca3af" sub={isDirector ? `λ ${prevLambda.toFixed(2)}` : undefined} />
-                  <StatBox label="Tension Now"    value={tensionLabel(newLambda)}   color={lambdaColor} sub={isDirector ? `λ ${newLambda.toFixed(2)}` : undefined} />
-                  <StatBox label="Change"         value={lambdaDelta > 0.05 ? 'Rising' : lambdaDelta < -0.05 ? 'Easing' : 'Stable'} color={deltaColor} sub={isDirector ? `${lambdaDelta >= 0 ? '+' : ''}${lambdaDelta.toFixed(3)}` : undefined} />
+          {/* Tension stat boxes */}
+          <SectionGlow active={tensionChanged} color={tensionGlowColor}>
+            <div className="grid grid-cols-3 gap-3">
+              <StatBox label="Tension Before" value={tensionLabel(prevLambda)} color="#9ca3af" sub={isDirector ? `λ ${prevLambda.toFixed(2)}` : undefined} />
+              <StatBox label="Tension Now"    value={tensionLabel(newLambda)}  color={lambdaColor} sub={isDirector ? `λ ${newLambda.toFixed(2)}` : undefined} />
+              <StatBox label="Change" value={lambdaDelta > 0.05 ? 'Rising' : lambdaDelta < -0.05 ? 'Easing' : 'Stable'} color={deltaColor} sub={isDirector ? `${lambdaDelta >= 0 ? '+' : ''}${lambdaDelta.toFixed(3)}` : undefined} />
+            </div>
+          </SectionGlow>
+
+          {/* Active cascades */}
+          {gameState.activeCascades.length > 0 && (
+            <SectionGlow active={cascadeGlowActive} color="#ef4444">
+              <div>
+                <div className="text-xs text-gray-600 uppercase tracking-widest mb-2">Active Cascades</div>
+                <div className="flex flex-wrap gap-2">
+                  {gameState.activeCascades.map(c => {
+                    const isNew = !(prevState?.activeCascades ?? []).includes(c);
+                    return (
+                      <span
+                        key={c}
+                        className="text-xs font-mono px-2 py-1 rounded border"
+                        style={{
+                          borderColor: isNew ? '#ef4444' : '#374151',
+                          color:       isNew ? '#fca5a5' : '#6b7280',
+                          backgroundColor: isNew ? '#7f1d1d30' : 'transparent',
+                        }}
+                      >
+                        {isNew ? '⚡ ' : ''}{c.replace(/_/g, ' ')}
+                      </span>
+                    );
+                  })}
                 </div>
-
-                {/* Active cascades */}
-                {gameState.activeCascades.length > 0 && (
-                  <div>
-                    <div className="text-xs text-gray-600 uppercase tracking-widest mb-2">Active Cascades</div>
-                    <div className="flex flex-wrap gap-2">
-                      {gameState.activeCascades.map(c => {
-                        const isNew = !(prevState?.activeCascades ?? []).includes(c);
-                        return (
-                          <span
-                            key={c}
-                            className="text-xs font-mono px-2 py-1 rounded border"
-                            style={{
-                              borderColor: isNew ? '#ef4444' : '#374151',
-                              color:       isNew ? '#fca5a5' : '#6b7280',
-                              backgroundColor: isNew ? '#7f1d1d30' : 'transparent',
-                            }}
-                          >
-                            {isNew ? '⚡ ' : ''}{c.replace(/_/g, ' ')}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Sub-game states */}
-                {subGames.length > 0 && (
-                  <div>
-                    <div className="text-xs text-gray-600 uppercase tracking-widest mb-2">Sub-Game States</div>
-                    <div className="space-y-3">
-                      {subGames.map(sg => (
-                        <div
-                          key={sg.key}
-                          className="border-l-2 pl-3"
-                          style={{
-                            borderColor:
-                              sg.equilibriumState === 'locked'    ? '#ef4444' :
-                              sg.equilibriumState === 'dominated' ? '#f97316' :
-                              sg.equilibriumState === 'shifting'  ? '#eab308' : '#22c55e',
-                          }}
-                        >
-                          <div className="text-xs font-semibold text-white mb-0.5">{sg.name}</div>
-                          <div className="text-xs text-gray-400">{sg.description}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Faction objectives */}
-                <div>
-                  <div className="text-xs text-gray-600 uppercase tracking-widest mb-3">Faction Objectives</div>
-                  <div className="space-y-2">
-                    {Object.entries(gameState.factions).map(([id, f]) => {
-                      const color = FACTION_COLORS[id] ?? '#888';
-                      const isMe  = id === playerFaction;
-                      const prev  = prevState?.factions[id as FactionId]?.objectiveProgress ?? 0;
-                      const delta = f.objectiveProgress - prev;
-
-                      if (isMe) {
-                        return (
-                          <div key={id}>
-                            <div className="flex justify-between text-xs mb-1">
-                              <span style={{ color }} className="font-semibold">{id} (you)</span>
-                              <span style={{ color }}>
-                                {f.objectiveProgress}%
-                                {delta !== 0 && (
-                                  <span className="ml-1" style={{ color: delta > 0 ? '#22c55e' : '#ef4444' }}>
-                                    {delta > 0 ? '+' : ''}{delta}
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            <div className="h-2 rounded-full bg-[#1a1a1a] overflow-hidden">
-                              <motion.div
-                                className="h-full rounded-full"
-                                style={{ backgroundColor: color }}
-                                initial={{ width: `${prev}%` }}
-                                animate={{ width: `${f.objectiveProgress}%` }}
-                                transition={{ duration: 0.8 }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div key={id} className="flex items-center gap-3">
-                          <span className="text-xs w-14 text-gray-500">{id}</span>
-                          <div className="flex-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: `${f.objectiveProgress}%`, backgroundColor: color }} />
-                          </div>
-                          <span className="text-xs font-mono text-gray-500 w-8 text-right">{f.objectiveProgress}%</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
               </div>
+            </SectionGlow>
+          )}
+
+          {/* Sub-game states */}
+          {subGames.length > 0 && (
+            <SectionGlow active={subGameAlerted} color="#f97316">
+              <div>
+                <div className="text-xs text-gray-600 uppercase tracking-widest mb-2">Sub-Game States</div>
+                <div className="space-y-3">
+                  {(activeSubGames.length > 0 ? activeSubGames : subGames.slice(0, 2)).map(sg => (
+                    <div
+                      key={sg.key}
+                      className="border-l-2 pl-3"
+                      style={{
+                        borderColor:
+                          sg.equilibriumState === 'locked'    ? '#ef4444' :
+                          sg.equilibriumState === 'dominated' ? '#f97316' :
+                          sg.equilibriumState === 'shifting'  ? '#eab308' : '#22c55e',
+                      }}
+                    >
+                      <div className="text-xs font-semibold text-white mb-0.5">{sg.name}</div>
+                      <div className="text-xs text-gray-400">{sg.description}</div>
+                    </div>
+                  ))}
+                </div>
+                {stableSubGames.length > 0 && (
+                  <button
+                    onClick={() => setShowStable(v => !v)}
+                    className="text-[10px] text-gray-700 hover:text-gray-400 mt-3 transition"
+                  >
+                    {showStable ? '− hide stable' : `+ ${stableSubGames.length} stable sub-games`}
+                  </button>
+                )}
+                {showStable && (
+                  <div className="space-y-2 mt-2 opacity-50">
+                    {stableSubGames.map(sg => (
+                      <div key={sg.key} className="border-l-2 border-[#22c55e] pl-3">
+                        <div className="text-xs text-gray-500">{sg.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </SectionGlow>
+          )}
+
+          {/* Faction objectives */}
+          <SectionGlow active={myDelta > 0} color={myColor}>
+            <div>
+              <div className="text-xs text-gray-600 uppercase tracking-widest mb-3">Faction Objectives</div>
+              <div className="space-y-2">
+                {Object.entries(gameState.factions).map(([id, f]) => {
+                  const color = FACTION_COLORS[id] ?? '#888';
+                  const isMe  = id === playerFaction;
+                  const prev  = prevState?.factions[id as FactionId]?.objectiveProgress ?? 0;
+                  const delta = f.objectiveProgress - prev;
+
+                  if (isMe) {
+                    return (
+                      <div key={id}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span style={{ color }} className="font-semibold">{id} (you)</span>
+                          <span style={{ color }}>
+                            {f.objectiveProgress}%
+                            {delta !== 0 && (
+                              <span className="ml-1" style={{ color: delta > 0 ? '#22c55e' : '#ef4444' }}>
+                                {delta > 0 ? '+' : ''}{delta}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[#1a1a1a] overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full"
+                            style={{ backgroundColor: color }}
+                            initial={{ width: `${prev}%` }}
+                            animate={{ width: `${f.objectiveProgress}%` }}
+                            transition={{ duration: 0.8 }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={id} className="flex items-center gap-3">
+                      <span className="text-xs w-14 text-gray-500">{id}</span>
+                      <div className="flex-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${f.objectiveProgress}%`, backgroundColor: color }} />
+                      </div>
+                      <span className="text-xs font-mono text-gray-500 w-8 text-right">{f.objectiveProgress}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </SectionGlow>
+
         </div>
 
         {/* Bottom actions */}
-        <div className="pt-2 border-t border-[#1a1a1a] flex gap-3 justify-end">
+        <div className="pt-2 border-t border-[#1a1a1a] flex gap-3 justify-end items-center">
           {!isGameOver && (
             <button
-              onClick={skipAnalysis}
-              className="px-5 py-2 bg-red-700 hover:bg-red-600 rounded font-bold text-sm transition"
+              onClick={() => {
+                if (countdownRef.current) clearInterval(countdownRef.current);
+                skipAnalysis();
+              }}
+              className="relative overflow-hidden px-5 py-2 bg-red-700 hover:bg-red-600 rounded font-bold text-sm transition"
             >
-              Continue
+              <motion.div
+                className="absolute inset-0 bg-red-900/50 origin-left"
+                initial={{ scaleX: 1 }}
+                animate={{ scaleX: 0 }}
+                transition={{ duration: COUNTDOWN_SECONDS, ease: 'linear' }}
+              />
+              <span className="relative">
+                Continue <span className="font-mono text-red-300 text-xs ml-1">{countdown}s</span>
+              </span>
             </button>
           )}
           {isGameOver && (
