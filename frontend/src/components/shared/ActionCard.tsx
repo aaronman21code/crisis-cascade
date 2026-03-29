@@ -21,34 +21,42 @@ export function ActionCard({
   const { impact, impactColor, consequence } = getConsequenceLabel(action);
   const subGameLabel = getSubGameStateLabel(subGameState ?? '');
 
+  const glowPulse = canAfford && !isSelected ? {
+    boxShadow: [
+      `0 0 0 1px ${factionColor}30, 0 0 10px 0 ${factionColor}10`,
+      `0 0 0 1px ${factionColor}70, 0 0 22px 0 ${factionColor}28`,
+      `0 0 0 1px ${factionColor}30, 0 0 10px 0 ${factionColor}10`,
+    ],
+    borderColor: [
+      `${factionColor}40`,
+      `${factionColor}90`,
+      `${factionColor}40`,
+    ],
+  } : {};
+
   return (
     <motion.button
       initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: canAfford ? 1 : 0.4, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.3 }}
+      animate={{
+        opacity: canAfford ? 1 : 0.4,
+        y: 0,
+        ...(canAfford && !isSelected ? glowPulse : {}),
+      }}
+      transition={{
+        opacity: { delay: index * 0.08, duration: 0.3 },
+        y: { delay: index * 0.08, duration: 0.3 },
+        boxShadow: { duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 },
+        borderColor: { duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 },
+      }}
       whileTap={canAfford ? { scale: 0.98 } : {}}
       disabled={!canAfford}
       onClick={onClick}
       className="group w-full text-left rounded-xl border p-5 transition-colors duration-150"
       style={{
         backgroundColor: isSelected ? `${factionColor}15` : '#0d0d12',
-        borderColor: isSelected ? factionColor : canAfford ? `${factionColor}50` : '#1a1a1a',
+        borderColor: isSelected ? factionColor : canAfford ? `${factionColor}40` : '#1a1a1a',
         cursor: canAfford ? 'pointer' : 'not-allowed',
-        boxShadow: isSelected
-          ? `0 0 0 1px ${factionColor}40, 0 0 18px 0 ${factionColor}20`
-          : canAfford ? `0 0 0 1px ${factionColor}20, 0 0 12px 0 ${factionColor}0c` : 'none',
-      }}
-      onMouseEnter={e => {
-        if (canAfford && !isSelected) {
-          (e.currentTarget as HTMLElement).style.borderColor = `${factionColor}90`;
-          (e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 1px ${factionColor}40, 0 0 20px 0 ${factionColor}18`;
-        }
-      }}
-      onMouseLeave={e => {
-        if (!isSelected) {
-          (e.currentTarget as HTMLElement).style.borderColor = canAfford ? `${factionColor}50` : '#1a1a1a';
-          (e.currentTarget as HTMLElement).style.boxShadow = canAfford ? `0 0 0 1px ${factionColor}20, 0 0 12px 0 ${factionColor}0c` : 'none';
-        }
+        boxShadow: isSelected ? `0 0 0 1px ${factionColor}40, 0 0 18px 0 ${factionColor}20` : undefined,
       }}
     >
       <div className="font-bold text-base text-white mb-2">{action.name}</div>
