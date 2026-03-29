@@ -21,7 +21,10 @@ export function ResolvingScreen() {
   const [revealedCount, setRevealedCount] = useState(0);
   const [metricsVisible, setMetricsVisible] = useState(false);
   const [cascadeFlash, setCascadeFlash] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const AUTO_ADVANCE_MS = 15000;
 
   const factionCount = FACTION_ORDER.filter(fId => resolvedActions[fId]).length;
 
@@ -53,14 +56,28 @@ export function ResolvingScreen() {
           clearInterval(timerRef.current!);
           setTimeout(() => {
             setMetricsVisible(true);
-            setTimeout(() => advanceToAnalysis(), 8000);
+            // Start countdown
+            setCountdown(15);
+            countdownRef.current = setInterval(() => {
+              setCountdown(prev => {
+                if (prev === null || prev <= 1) {
+                  clearInterval(countdownRef.current!);
+                  advanceToAnalysis();
+                  return 0;
+                }
+                return prev - 1;
+              });
+            }, 1000);
           }, METRICS_DELAY);
         }
         return next;
       });
     }, REVEAL_INTERVAL);
 
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
   }, [factionCount]);
 
   const prevLambda  = prevState?.globalLambda  ?? gameState.globalLambda;
@@ -228,16 +245,34 @@ export function ResolvingScreen() {
                 </motion.div>
               )}
 
-              {/* Continue button */}
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                onClick={advanceToAnalysis}
-                className="w-full py-3 bg-red-700 hover:bg-red-600 rounded font-bold text-sm transition mt-2"
-              >
-                Continue to Analysis →
-              </motion.button>
+              {/* Continue button with countdown bar */}
+              {countdown !== null && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="mt-2"
+                >
+                  <button
+                    onClick={() => {
+                      if (countdownRef.current) clearInterval(countdownRef.current);
+                      advanceToAnalysis();
+                    }}
+                    className="w-full py-3 bg-red-700 hover:bg-red-600 rounded font-bold text-sm transition relative overflow-hidden"
+                  >
+                    {/* Draining background */}
+                    <motion.div
+                      className="absolute inset-0 bg-red-900/60 origin-left"
+                      initial={{ scaleX: 1 }}
+                      animate={{ scaleX: 0 }}
+                      transition={{ duration: 15, ease: 'linear' }}
+                    />
+                    <span className="relative">
+                      Continue to Analysis → <span className="font-mono text-red-300 text-xs ml-1">{countdown}s</span>
+                    </span>
+                  </button>
+                </motion.div>
+              )}
 
             </motion.div>
           )}
