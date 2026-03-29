@@ -32,17 +32,23 @@ export function ActionCard({
       className="group w-full text-left rounded-xl border p-5 transition-colors duration-150"
       style={{
         backgroundColor: isSelected ? `${factionColor}15` : '#0d0d12',
-        borderColor: isSelected ? factionColor : canAfford ? '#2a2a3a' : '#1a1a1a',
+        borderColor: isSelected ? factionColor : canAfford ? `${factionColor}50` : '#1a1a1a',
         cursor: canAfford ? 'pointer' : 'not-allowed',
-        boxShadow: isSelected ? `0 0 0 1px ${factionColor}40` : 'none',
+        boxShadow: isSelected
+          ? `0 0 0 1px ${factionColor}40, 0 0 18px 0 ${factionColor}20`
+          : canAfford ? `0 0 0 1px ${factionColor}20, 0 0 12px 0 ${factionColor}0c` : 'none',
       }}
       onMouseEnter={e => {
-        if (canAfford && !isSelected)
-          (e.currentTarget as HTMLElement).style.borderColor = `${factionColor}60`;
+        if (canAfford && !isSelected) {
+          (e.currentTarget as HTMLElement).style.borderColor = `${factionColor}90`;
+          (e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 1px ${factionColor}40, 0 0 20px 0 ${factionColor}18`;
+        }
       }}
       onMouseLeave={e => {
-        if (!isSelected)
-          (e.currentTarget as HTMLElement).style.borderColor = canAfford ? '#2a2a3a' : '#1a1a1a';
+        if (!isSelected) {
+          (e.currentTarget as HTMLElement).style.borderColor = canAfford ? `${factionColor}50` : '#1a1a1a';
+          (e.currentTarget as HTMLElement).style.boxShadow = canAfford ? `0 0 0 1px ${factionColor}20, 0 0 12px 0 ${factionColor}0c` : 'none';
+        }
       }}
     >
       <div className="font-bold text-base text-white mb-2">{action.name}</div>
